@@ -1,6 +1,9 @@
 tmp/
 outputs/
 
+# Large generated stress meshes (regenerate with datasets/prepare_stress.py)
+data/stress/
+
 # Python
 __pycache__/
 *.py[cod]

@@ -25,6 +25,7 @@
 #   OUTPUTS_DIR   directory for logs                   (default: outputs)
 #   EVAL_SCRIPT   dataset evaluator script             (default: evaluate_dataset.py)
 #   RESOLUTION    render resolution                    (default: native 1024)
+#   TIME_BUDGET   per-mesh wall-clock budget, seconds  (default: evaluator's 21)
 #   PYTHON        python interpreter                   (default: python3)
 #
 # Exit codes:
@@ -32,6 +33,11 @@
 #      compression than the previous best (or no previous valid run)
 #   1  invalid submission, evaluator/solver error, or no improvement vs. best
 set -u
+
+# Force the C locale so numeric formatting/parsing uses a '.' decimal point.
+# Without this, printf/awk on a comma-decimal locale reject the evaluator's
+# dot-formatted compression rate ("invalid number") and mislabel the log.
+export LC_ALL=C
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$repo_root" || exit 1
@@ -102,6 +108,9 @@ eval_args=("$eval_script" "--solver" "$script_file" "--dataset" "$dataset_dir"
            "--python" "$python_bin" "--summary")
 if [ -n "${RESOLUTION:-}" ]; then
     eval_args+=("--resolution" "$RESOLUTION")
+fi
+if [ -n "${TIME_BUDGET:-}" ]; then
+    eval_args+=("--time-budget" "$TIME_BUDGET")
 fi
 
 everr="$(mktemp)"

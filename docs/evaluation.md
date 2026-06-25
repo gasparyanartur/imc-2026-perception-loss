@@ -170,9 +170,10 @@ Obtaining ppsurf meshes:
 `evaluate_dataset.py` runs a solver across a whole dataset and aggregates the
 results. For each input mesh it:
 
-1. runs `SOLVER < input > simplified` (a subprocess, like the real grader);
+1. runs `SOLVER < input > simplified` (a subprocess, like the real grader),
+   timing the solver's wall-clock;
 2. scores the pair with `evaluate.py`'s `evaluate()`;
-3. records the per-scenario verdict, compression, Hausdorff and SSIM.
+3. records the per-scenario verdict, compression, Hausdorff, SSIM and solve time.
 
 It prints a per-scenario table and a machine-readable `KEY=VALUE` block. The
 overall `RESULT` is `VALID` only when **every** scenario is valid; the aggregate
@@ -185,9 +186,43 @@ SCENARIOS_PASSED=<int>
 MEAN_COMPRESSION_RATE=<float>
 MIN_COMPRESSION_RATE=<float>
 COMPRESSION_RATE=<float>        # alias for the mean (kept stable for tooling)
+SLOWEST_SOLVE_SECONDS=<float>   # slowest per-mesh solver wall-clock
+TIME_BUDGET=<float>             # per-mesh budget enforced (0 = disabled)
+SCENARIOS_OVER_BUDGET=<int>     # meshes rejected for exceeding the budget
 ```
 
 The process exits `0` only if every scenario passed.
+
+### Runtime budget, `--no-ssim`, and stress meshes
+
+The representative `data/ppsurf` set tops out at ~9.6k vertices, but the grader
+goes to ~1.1M vertices / 2.1M faces under a hard **21 s / 2 GB** limit. A solver
+that is correct but too slow passes locally yet times out on the grader (a
+timeout yields no valid output, scored as 0). Two harness features expose that:
+
+- **`--time-budget <seconds>`** (default `21`): a mesh whose solver wall-clock
+  exceeds the budget is treated like a grader rejection — the scenario is marked
+  invalid with zero compression, mirroring a real timeout. The per-mesh `secs`
+  column and the `SLOWEST_SOLVE_SECONDS` / `SCENARIOS_OVER_BUDGET` keys make slow
+  solvers visible. (CPython is slower than the grader's pypy3, so a CPython time
+  slightly over budget may still pass on the grader — treat it as a warning.)
+- **`--no-ssim`**: judge validity on the manifold gate **+ Hausdorff bound
+  only**, skipping the pure-Python SSIM rasterizer (which cannot render
+  300k+-face meshes quickly). This is what makes grader-scale stress meshes
+  runnable end-to-end for runtime/geometry checks. It is **not** a full score —
+  the perceptual SSIM gate is not enforced — so use it only for runtime/scaling
+  tests, not for final grading.
+
+Generate large synthetic stress meshes (clean closed-manifold tori, no
+degenerate faces) with `datasets/prepare_stress.py`:
+
+```sh
+python3 datasets/prepare_stress.py --target-vertices 600000 --out data/stress/stress_600k.txt
+python3 evaluate_dataset.py --solver solutions/iter2-budget/iter2-budget.py \
+    --dataset data/stress --no-ssim --time-budget 21
+```
+
+`data/stress/` is git-ignored; regenerate it as needed.
 
 ### Usage
 
@@ -232,6 +267,7 @@ It:
 | `OUTPUTS_DIR` | `outputs`             | directory for logs               |
 | `EVAL_SCRIPT` | `evaluate_dataset.py` | dataset evaluator script         |
 | `RESOLUTION`  | `1024` (native grader) | render resolution               |
+| `TIME_BUDGET` | evaluator's `21`      | per-mesh solver wall-clock budget, seconds |
 | `PYTHON`      | `python3`             | python interpreter               |
 
 ### Exit codes
