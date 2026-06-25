@@ -38,6 +38,16 @@ python_bin=${PYTHON:-"python3"}
 
 mkdir -p "$outputs_dir"
 
+# Returns success only if the argument is a plain decimal number. Used to guard
+# values that are interpolated into awk expressions (defense against malformed
+# or tampered log files).
+is_number() {
+    case "$1" in
+        ''|*[!0-9.+-]*) return 1 ;;
+        *) [ "$(printf '%s' "$1" | tr -cd '.' | wc -c)" -le 1 ] ;;
+    esac
+}
+
 timestamp="$(date +%Y%m%d-%H%M%S)"
 simplified_path="$outputs_dir/py-$timestamp.mesh.txt"
 
@@ -50,7 +60,7 @@ best_previous_rate() {
         [ -e "$f" ] || continue
         grep -q '^RESULT=VALID$' "$f" || continue
         rate="$(grep -m1 '^COMPRESSION_RATE=' "$f" | cut -d= -f2)"
-        [ -n "$rate" ] || continue
+        is_number "$rate" || continue
         if [ -z "$best" ] || awk "BEGIN{exit !($rate > $best)}"; then
             best="$rate"
         fi
@@ -143,12 +153,20 @@ if [ "$result" != "VALID" ]; then
     exit 1
 fi
 
+# A VALID result must carry a numeric compression rate; guard before using it
+# in awk expressions and filenames.
+if ! is_number "$new_rate"; then
+    write_log "error"
+    echo "FAILED: evaluator reported VALID but no numeric COMPRESSION_RATE." >&2
+    exit 1
+fi
+
 # Valid submission: tag the log filename with the compression metric.
 rate_label="$(awk "BEGIN{printf \"compr-%.4f\", $new_rate}")"
 write_log "$rate_label"
 
 # --- step 4: compare against the best previous valid run --------------------
-if [ -z "$prev_best" ]; then
+if [ -z "$prev_best" ] || ! is_number "$prev_best"; then
     echo "RESULT: VALID. CompressionRate=$new_rate% (no previous valid run to compare)."
     exit 0
 fi
