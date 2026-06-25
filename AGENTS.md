@@ -13,7 +13,7 @@ valid submission for the IMC 2026 challenge.
    rewards or rejects.
 
 2. **Iterate on the solution.** Implement and improve the mesh simplification
-   logic in `solution.py` (the `simplify()` function). Make incremental changes
+   logic in `solutions/baseline/baseline.py` (the `simplify()` function). Make incremental changes
    that aim to remove more vertices while keeping the output a valid closed
    2-manifold within the Hausdorff and SSIM constraints.
 
@@ -32,9 +32,11 @@ valid submission for the IMC 2026 challenge.
 
 ## Scope
 
-For now, focus on the **Python** solution (`solution.py`), scored by
-`evaluate.py` via `evaluate.sh`. See [`docs/evaluation.md`](docs/evaluation.md)
-for full details of the evaluator and harness.
+For now, focus on the **Python** solution (`solutions/baseline/baseline.py`), scored across the
+representative ppsurf dataset (`data/ppsurf/`) by `evaluate_dataset.py` (which
+wraps `evaluate.py`) via `evaluate.sh`. A submission is valid only when **every**
+dataset scenario passes. See [`docs/evaluation.md`](docs/evaluation.md) for full
+details of the evaluator, the dataset, and the harness.
 
 ## Conventions
 

@@ -4,7 +4,7 @@
 # Implement your simplification inside simplify()
 #
 # To run:
-#   pypy3 baseline.py < mesh.in > mesh.out
+#   pypy3 initial.py < mesh.in > mesh.out
 
 import sys
 
@@ -51,8 +51,9 @@ def save_obj():
 
 # Optimize the mesh: replace V and F
 def simplify():
-    global V, F
-    # TODO: implement mesh simplification here.
+    # The initial scaffold performs no simplification: it echoes the input
+    # mesh back out unchanged. Real solvers (see solutions/baseline) implement
+    # the reduction logic here.
     pass
 
 

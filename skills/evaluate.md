@@ -5,9 +5,15 @@ improvement before accepting it.
 
 ## When to use
 
-After any change to the solver (`solution.py`) — every time you want to know
+After any change to the solver (`solutions/baseline/baseline.py`) — every time you want to know
 whether the current mesh-simplification logic produces a **valid** submission
 and whether it **beats the previous best** model.
+
+The harness scores the solver on a **representative dataset** of meshes
+(`data/ppsurf/`, derived from the ppsurf dataset; see
+[`docs/evaluation.md`](../docs/evaluation.md)), **not** a single mesh. A solver
+that passes a trivial cube but fails real meshes is caught here: the submission
+is only valid when **every** scenario passes.
 
 ## How to run
 
@@ -17,43 +23,57 @@ Call the evaluation harness from the repository root:
 ./evaluate.sh
 ```
 
-To score at native (real-grader-like) resolution:
+This scores at the native, real-grader resolution (1024) by default, so the
+result reflects real (final) grading performance. For a quick, non-representative
+preview you can render at a lower resolution (this narrows the camera field of
+view and changes the score, so never accept a change based on it):
 
 ```sh
-RESOLUTION=1024 ./evaluate.sh
+RESOLUTION=256 ./evaluate.sh   # fast preview only -- NOT a real-grader score
 ```
 
 `evaluate.sh` will:
 
-1. run the solver (`solution.py`) on the input mesh to produce a simplified mesh;
-2. score it with `evaluate.py` (see [`docs/evaluation.md`](../docs/evaluation.md));
+1. run the solver (`solutions/baseline/baseline.py`) on **every** mesh in the dataset directory
+   (default `data/ppsurf/`) and score each one with `evaluate.py` (via
+   `evaluate_dataset.py`);
+2. aggregate the per-scenario verdicts — the submission is **VALID** only when
+   all scenarios pass (`SCENARIOS_PASSED == SCENARIOS_TOTAL`); the reported
+   `CompressionRate` is the **mean** over all scenarios;
 3. **log the output** to `outputs/<date>-<result>.txt`, where `<result>` is the
-   compression metric on success (e.g. `compr-11.1111`) or `error` / `invalid`
-   on failure — the log records the metric on success and the error otherwise;
-4. compare the new compression rate against the **best previous valid run** in
-   `outputs/` and print `IMPROVED` or `NOT IMPROVED`.
+   mean compression metric on success (e.g. `compr-78.2938`) or `error` /
+   `invalid` on failure;
+4. compare the new mean compression rate against the **best previous valid run**
+   in `outputs/` and print `IMPROVED` or `NOT IMPROVED`.
+
+The dataset is regenerated with
+[`datasets/prepare_ppsurf.py`](../datasets/prepare_ppsurf.py); see
+[`docs/evaluation.md`](../docs/evaluation.md) for how to grow it.
 
 ## Interpreting the result
 
-- **Exit code `0`** — the submission is valid **and** strictly beats the
-  previous best (or there is no previous valid run). Keep the change.
+- **Exit code `0`** — **every** scenario in the dataset is valid **and** the
+  mean compression strictly beats the previous best (or there is no previous
+  valid run). Keep the change.
 - **Exit code `1`** — one of:
-  - the submission is **invalid** (failed the manifold / Hausdorff / SSIM gate),
+  - **at least one scenario is invalid** (failed the manifold / Hausdorff /
+    SSIM gate) — the report shows `passed N/M scenarios` and lists the failing
+    scenario's reason,
   - the solver or evaluator **errored**, or
-  - the submission is valid but did **not improve** (`NOT IMPROVED`) on the
-    best previous valid run.
+  - all scenarios are valid but the mean compression did **not improve**
+    (`NOT IMPROVED`) on the best previous valid run.
 
   In every `1` case, do **not** accept the change: read the logged
-  `outputs/<date>-<result>.txt` file, diagnose the cause, and iterate on
-  `solution.py`.
+  `outputs/<date>-<result>.txt` file (it contains the per-scenario table),
+  diagnose which mesh(es) failed and why, and iterate on `solutions/baseline/baseline.py`.
 
 ## The improvement rule
 
 The challenge ranks valid submissions purely by `CompressionRate` (higher is
-better). A new model is only an improvement if it is **valid** and its
-`CompressionRate` is **strictly greater** than the best previously logged valid
-run. The `outputs/` log history is what makes this comparison possible, so do
-not delete it between iterations.
+better). Here a model is only an improvement if it is valid on **all** dataset
+scenarios and its **mean** `CompressionRate` is **strictly greater** than the
+best previously logged valid run. The `outputs/` log history is what makes this
+comparison possible, so do not delete it between iterations.
 
 Bound the search: make at most **5 attempts** to beat the previous best. If none
 of the 5 attempts improves the score, stop iterating and report a short
@@ -62,5 +82,6 @@ and suggested next directions — rather than looping indefinitely.
 
 ## Scope
 
-For now this skill targets the **Python** solution only (`solution.py` +
+For now this skill targets the **Python** solution only (`solutions/baseline/baseline.py`), scored
+across the representative dataset by `evaluate_dataset.py` (which wraps
 `evaluate.py`).
