@@ -467,6 +467,22 @@ def _print_report(result: Result, original: Mesh, simplified: Mesh) -> None:
     print("=" * 60)
 
 
+def _print_summary(result: Result, original: Mesh, simplified: Mesh) -> None:
+    """Print a machine-readable ``KEY=VALUE`` block (one pair per line).
+
+    This is the contract relied on by ``evaluate.sh``; keep the keys stable.
+    """
+    print("RESULT=%s" % ("VALID" if result.valid else "INVALID"))
+    print("MANIFOLD_OK=%s" % ("1" if result.validity.ok else "0"))
+    print("FINAL_SSIM=%.6f" % result.final_ssim)
+    print("SSIM_THRESHOLD=%.6f" % SSIM_THRESHOLD)
+    print("HAUSDORFF=%.6f" % result.hausdorff)
+    print("HAUSDORFF_BOUND=%.6f" % result.hausdorff_bound)
+    print("COMPRESSION_RATE=%.6f" % result.compression_rate)
+    print("ORIGINAL_VERTICES=%d" % len(original.vertices))
+    print("SIMPLIFIED_VERTICES=%d" % len(simplified.vertices))
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Preliminary offline evaluator for the IMC 2026 "
@@ -478,13 +494,19 @@ def main(argv=None) -> int:
                         help="render resolution (default: %d)" % RESOLUTION)
     parser.add_argument("--quiet", action="store_true",
                         help="print only the final valid/invalid verdict")
+    parser.add_argument("--summary", action="store_true",
+                        help="print a machine-readable KEY=VALUE summary block")
     args = parser.parse_args(argv)
 
     original = load_mesh(args.original)
     simplified = load_mesh(args.simplified)
     result = evaluate(original, simplified, resolution=args.resolution)
 
-    if args.quiet:
+    if args.summary:
+        if not args.quiet:
+            _print_report(result, original, simplified)
+        _print_summary(result, original, simplified)
+    elif args.quiet:
         print("VALID" if result.valid else "INVALID")
     else:
         _print_report(result, original, simplified)

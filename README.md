@@ -19,7 +19,23 @@ python3 evaluate.py data/sample-input.txt data/sample-output.txt
 python3 evaluate.py data/sample-input.txt data/sample-output.txt --resolution 256
 ```
 
-The script exits with status `0` for a valid submission and `1` otherwise.
+The script exits with status `0` for a valid submission and `1` otherwise. See
+[`docs/evaluation.md`](docs/evaluation.md) for full details of the evaluator and
+its options.
+
+## Iterating on a solution
+
+`evaluate.sh` runs the Python solver (`solution.py`), scores the result with
+`evaluate.py`, logs it to `outputs/<date>-<result>.txt`, and reports whether the
+new model beats the best previous valid run:
+
+```sh
+./evaluate.sh                 # default solver, input, resolution
+RESOLUTION=1024 ./evaluate.sh # native-resolution score
+```
+
+Coding agents should follow [`AGENTS.md`](AGENTS.md) and use the
+[`skills/evaluate.md`](skills/evaluate.md) skill to drive this loop.
 
 ## Tests
 

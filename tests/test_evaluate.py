@@ -66,3 +66,27 @@ def test_cli_quiet_mode(sample_input_path, sample_output_path, capsys):
     )
     assert code == 0
     assert capsys.readouterr().out.strip() == "VALID"
+
+
+def test_cli_summary_emits_key_value_block(
+    sample_input_path, sample_output_path, capsys
+):
+    code = evaluate.main(
+        [sample_input_path, sample_output_path, "--resolution", "128",
+         "--quiet", "--summary"]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    summary = {}
+    for line in out.splitlines():
+        if "=" in line and line.split("=", 1)[0].isupper():
+            key, value = line.split("=", 1)
+            summary[key] = value
+    assert summary["RESULT"] == "VALID"
+    assert summary["MANIFOLD_OK"] == "1"
+    assert float(summary["FINAL_SSIM"]) >= 0.9
+    assert float(summary["COMPRESSION_RATE"]) == pytest.approx(
+        100.0 / 9.0, abs=1e-3
+    )
+    assert summary["ORIGINAL_VERTICES"] == "9"
+    assert summary["SIMPLIFIED_VERTICES"] == "8"
