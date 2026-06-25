@@ -65,7 +65,12 @@ import heapq
 
 # Numerical tolerances.
 _EPS_AREA = 1e-12          # reject faces whose area drops to ~0
-_NORMAL_FLIP_COS = 0.0     # reject collapses that turn a face normal by > 90 deg
+# Reject a collapse if it turns any incident face normal by more than ~66 deg
+# (cos < 0.4). The flat-shaded normal maps dominate the FinalSSIM score, so
+# allowing near-90-deg flips (cos 0.0) lets the surface deviate enough to drop
+# SSIM below the 0.9 gate on detailed meshes. 0.4 keeps every dataset scenario
+# valid with a safe SSIM margin while preserving aggressive compression.
+_NORMAL_FLIP_COS = 0.4
 _HAUSDORFF_FRAC = 0.05     # bound = 0.05 * AABB diagonal (matches evaluator)
 
 
