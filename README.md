@@ -20,3 +20,14 @@ python3 evaluate.py data/sample-input.txt data/sample-output.txt --resolution 25
 ```
 
 The script exits with status `0` for a valid submission and `1` otherwise.
+
+## Tests
+
+The evaluator is covered by a pytest suite under `tests/` that validates mesh
+I/O, the validity gate, rendering, SSIM, Hausdorff, and the end-to-end pipeline
+against the provided `data/` samples.
+
+```sh
+pip install numpy pytest   # scipy is optional (speeds up Hausdorff)
+python3 -m pytest
+```
