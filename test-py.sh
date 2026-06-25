@@ -1,4 +1,4 @@
-script_file=${SCRIPT_FILE:-"solution.py"}
+script_file=${SCRIPT_FILE:-"solutions/baseline/baseline.py"}
 outputs_dir=${OUTPUTS_DIR:-"outputs"}
 input_path=${INPUT_PATH:-"data/sample-input.txt"}
 mkdir -p "$outputs_dir"

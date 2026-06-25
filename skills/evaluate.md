@@ -5,7 +5,7 @@ improvement before accepting it.
 
 ## When to use
 
-After any change to the solver (`solution.py`) — every time you want to know
+After any change to the solver (`solutions/baseline/baseline.py`) — every time you want to know
 whether the current mesh-simplification logic produces a **valid** submission
 and whether it **beats the previous best** model.
 
@@ -34,7 +34,7 @@ RESOLUTION=256 ./evaluate.sh   # fast preview only -- NOT a real-grader score
 
 `evaluate.sh` will:
 
-1. run the solver (`solution.py`) on **every** mesh in the dataset directory
+1. run the solver (`solutions/baseline/baseline.py`) on **every** mesh in the dataset directory
    (default `data/ppsurf/`) and score each one with `evaluate.py` (via
    `evaluate_dataset.py`);
 2. aggregate the per-scenario verdicts — the submission is **VALID** only when
@@ -65,7 +65,7 @@ The dataset is regenerated with
 
   In every `1` case, do **not** accept the change: read the logged
   `outputs/<date>-<result>.txt` file (it contains the per-scenario table),
-  diagnose which mesh(es) failed and why, and iterate on `solution.py`.
+  diagnose which mesh(es) failed and why, and iterate on `solutions/baseline/baseline.py`.
 
 ## The improvement rule
 
@@ -82,6 +82,6 @@ and suggested next directions — rather than looping indefinitely.
 
 ## Scope
 
-For now this skill targets the **Python** solution only (`solution.py`), scored
+For now this skill targets the **Python** solution only (`solutions/baseline/baseline.py`), scored
 across the representative dataset by `evaluate_dataset.py` (which wraps
 `evaluate.py`).

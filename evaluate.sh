@@ -5,7 +5,7 @@
 # aggregate score beats previous runs.
 #
 # Pipeline (Python only, for now):
-#   1. Run the solver (solution.py) on EVERY mesh in the dataset directory and
+#   1. Run the solver (solutions/baseline/baseline.py) on EVERY mesh in the dataset directory and
 #      score each one with evaluate.py (via evaluate_dataset.py).
 #   2. Aggregate the per-scenario verdicts: the submission is VALID only when
 #      every scenario passes (SCENARIOS_PASSED == SCENARIOS_TOTAL); the reported
@@ -20,7 +20,7 @@
 # scenarios" situation.
 #
 # Configuration (environment variables):
-#   SCRIPT_FILE   solver script to run                 (default: solution.py)
+#   SCRIPT_FILE   solver script to run                 (default: solutions/baseline/baseline.py)
 #   DATASET_DIR   directory of input meshes to score   (default: data/ppsurf)
 #   OUTPUTS_DIR   directory for logs                   (default: outputs)
 #   EVAL_SCRIPT   dataset evaluator script             (default: evaluate_dataset.py)
@@ -36,7 +36,7 @@ set -u
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$repo_root" || exit 1
 
-script_file=${SCRIPT_FILE:-"solution.py"}
+script_file=${SCRIPT_FILE:-"solutions/baseline/baseline.py"}
 dataset_dir=${DATASET_DIR:-"data/ppsurf"}
 outputs_dir=${OUTPUTS_DIR:-"outputs"}
 eval_script=${EVAL_SCRIPT:-"evaluate_dataset.py"}

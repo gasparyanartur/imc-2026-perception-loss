@@ -23,7 +23,7 @@ only if every scenario passed.
 
 Usage::
 
-    python3 evaluate_dataset.py [--solver solution.py] [--dataset data/ppsurf]
+    python3 evaluate_dataset.py [--solver solutions/baseline/baseline.py] [--dataset data/ppsurf]
         [--resolution N] [--summary] [--quiet] [--timeout SECONDS]
 
 Only NumPy is required (SciPy speeds up the Hausdorff step when available).
@@ -189,8 +189,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Evaluate a solver across a whole mesh dataset."
     )
-    parser.add_argument("--solver", default="solution.py",
-                        help="solver script to run (default: solution.py)")
+    parser.add_argument("--solver", default="solutions/baseline/baseline.py",
+                        help="solver script to run (default: solutions/baseline/baseline.py)")
     parser.add_argument("--dataset", default="data/ppsurf",
                         help="dataset directory or single mesh file "
                              "(default: data/ppsurf)")

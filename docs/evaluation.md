@@ -193,7 +193,7 @@ The process exits `0` only if every scenario passed.
 
 ```sh
 python3 evaluate_dataset.py --dataset data/ppsurf --summary
-python3 evaluate_dataset.py --solver solution.py --dataset data/ppsurf \
+python3 evaluate_dataset.py --solver solutions/baseline/baseline.py --dataset data/ppsurf \
     --resolution 1024 --summary
 ```
 
@@ -212,7 +212,7 @@ Hausdorff step).
 `evaluate.sh` is the end-to-end loop used while iterating on the Python solver.
 It:
 
-1. runs the solver (`solution.py` by default) on **every** mesh in the dataset
+1. runs the solver (`solutions/baseline/baseline.py` by default) on **every** mesh in the dataset
    directory and scores each with `evaluate.py` (via `evaluate_dataset.py`);
 2. aggregates the per-scenario verdicts — the submission is `VALID` only when
    all scenarios pass; the reported `CompressionRate` is the mean over all
@@ -227,7 +227,7 @@ It:
 
 | Variable      | Default               | Meaning                          |
 | ------------- | --------------------- | -------------------------------- |
-| `SCRIPT_FILE` | `solution.py`         | solver script to run             |
+| `SCRIPT_FILE` | `solutions/baseline/baseline.py`         | solver script to run             |
 | `DATASET_DIR` | `data/ppsurf`         | directory of input meshes        |
 | `OUTPUTS_DIR` | `outputs`             | directory for logs               |
 | `EVAL_SCRIPT` | `evaluate_dataset.py` | dataset evaluator script         |
@@ -247,7 +247,7 @@ It:
 ```sh
 ./evaluate.sh                          # default solver, dataset, native 1024 res
 RESOLUTION=256 ./evaluate.sh           # fast preview only (not a real-grader score)
-SCRIPT_FILE=solution.py DATASET_DIR=data/ppsurf ./evaluate.sh
+SCRIPT_FILE=solutions/baseline/baseline.py DATASET_DIR=data/ppsurf ./evaluate.sh
 ```
 
 The `outputs/` directory is git-ignored; logs accumulate there so that score

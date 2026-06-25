@@ -25,7 +25,7 @@ its options.
 
 ## Iterating on a solution
 
-`evaluate.sh` runs the Python solver (`solution.py`) across a **representative
+`evaluate.sh` runs the Python solver (`solutions/baseline/baseline.py`) across a **representative
 dataset** of meshes (`data/ppsurf/`, derived from the
 [ppsurf dataset](https://huggingface.co/datasets/perler/ppsurf)), scores each
 with `evaluate.py`, logs the aggregate to `outputs/<date>-<result>.txt`, and
