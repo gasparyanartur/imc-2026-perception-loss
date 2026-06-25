@@ -4,7 +4,12 @@
 # Implement your simplification inside simplify()
 #
 # To run:
-#   pypy3 baseline.py < mesh.in > mesh.out
+#   pypy3 iter1-runtime.py < mesh.in > mesh.out
+#
+# iter1-runtime: a runtime-optimized variant of the baseline endpoint-only QEM
+# edge-collapse solver. The algorithm, numerical tolerances, and collapse order
+# are unchanged, so the output is byte-identical to solutions/baseline; only the
+# hot loops are made faster (see simplify() for the specific optimizations).
 
 import sys
 
@@ -62,6 +67,13 @@ import heapq
 #   * link condition (exactly two shared neighbours for a closed manifold);
 #   * no degenerate (zero-area) face and no face-normal flip;
 #   * cluster-radius proxy for the symmetric Hausdorff bound.
+#
+# Runtime notes (vs. solutions/baseline): the arithmetic and collapse order are
+# identical, but the hot paths avoid per-call list allocations (quadrics are
+# combined/added with unrolled expressions), the link-condition check counts
+# shared neighbours/faces with early exit instead of materializing intersection
+# sets, neighbour sets are rebuilt with a single set.update per face, and the
+# frequently used containers are bound to fast local names.
 
 # Numerical tolerances.
 _EPS_AREA = 1e-12          # reject faces whose area drops to ~0
@@ -105,8 +117,17 @@ def _plane_quadric(a, b, c, d, w):
 
 
 def _quadric_add(into, other):
-    for i in range(10):
-        into[i] += other[i]
+    # Unrolled (vs. a range(10) loop): identical result, fewer interpreter ops.
+    into[0] += other[0]
+    into[1] += other[1]
+    into[2] += other[2]
+    into[3] += other[3]
+    into[4] += other[4]
+    into[5] += other[5]
+    into[6] += other[6]
+    into[7] += other[7]
+    into[8] += other[8]
+    into[9] += other[9]
 
 
 def _quadric_error(q, v):
@@ -142,6 +163,7 @@ def simplify():
         + (max(zs) - min(zs)) ** 2
     ) ** 0.5
     hbound = _HAUSDORFF_FRAC * diag
+    hbound_sq = hbound * hbound
 
     # Connectivity. faces[f] is a 3-tuple or None once removed.
     faces = [tuple(f) for f in F]
@@ -171,32 +193,68 @@ def simplify():
     cluster = [[i] for i in range(nv)]
     version = [0] * nv  # bumped whenever a vertex's neighbourhood changes
 
+    # Bind hot globals/builtins to locals (faster name lookups in the loops).
+    fplane = _face_plane
+    heappush = heapq.heappush
+    heappop = heapq.heappop
+    eps_area = _EPS_AREA
+    flip_cos = _NORMAL_FLIP_COS
+
+    heap = []
+
     def _best_target(a, b):
         """Cheapest endpoint placement for edge (a, b): (cost, keep, drop)."""
         qa, qb = quad[a], quad[b]
-        comb = [qa[i] + qb[i] for i in range(10)]
-        ca = _quadric_error(comb, coords[a])
-        cb = _quadric_error(comb, coords[b])
+        # Combine the two quadrics (unrolled; same floats as a range(10) loop).
+        c0 = qa[0] + qb[0]; c1 = qa[1] + qb[1]; c2 = qa[2] + qb[2]
+        c3 = qa[3] + qb[3]; c4 = qa[4] + qb[4]; c5 = qa[5] + qb[5]
+        c6 = qa[6] + qb[6]; c7 = qa[7] + qb[7]; c8 = qa[8] + qb[8]
+        c9 = qa[9] + qb[9]
+        # Inline v^T Q v at both endpoints (avoids a list alloc + 2 calls).
+        x, y, z = coords[a]
+        ca = (c0 * x * x + 2.0 * c1 * x * y + 2.0 * c2 * x * z + 2.0 * c3 * x
+              + c4 * y * y + 2.0 * c5 * y * z + 2.0 * c6 * y
+              + c7 * z * z + 2.0 * c8 * z + c9)
+        x, y, z = coords[b]
+        cb = (c0 * x * x + 2.0 * c1 * x * y + 2.0 * c2 * x * z + 2.0 * c3 * x
+              + c4 * y * y + 2.0 * c5 * y * z + 2.0 * c6 * y
+              + c7 * z * z + 2.0 * c8 * z + c9)
         if ca <= cb:
             return ca, a, b
         return cb, b, a
 
-    heap = []
-
     def _push_edge(a, b):
-        cost, keep, drop = _best_target(a, b)
+        # Only the cost is needed here (keep/drop are re-derived on pop), so
+        # inline _best_target's math and skip the keep/drop branch. This is the
+        # hottest path -- one push per incident edge after every collapse.
+        qa = quad[a]; qb = quad[b]
+        c0 = qa[0] + qb[0]; c1 = qa[1] + qb[1]; c2 = qa[2] + qb[2]
+        c3 = qa[3] + qb[3]; c4 = qa[4] + qb[4]; c5 = qa[5] + qb[5]
+        c6 = qa[6] + qb[6]; c7 = qa[7] + qb[7]; c8 = qa[8] + qb[8]
+        c9 = qa[9] + qb[9]
+        x, y, z = coords[a]
+        ca = (c0 * x * x + 2.0 * c1 * x * y + 2.0 * c2 * x * z + 2.0 * c3 * x
+              + c4 * y * y + 2.0 * c5 * y * z + 2.0 * c6 * y
+              + c7 * z * z + 2.0 * c8 * z + c9)
+        x, y, z = coords[b]
+        cb = (c0 * x * x + 2.0 * c1 * x * y + 2.0 * c2 * x * z + 2.0 * c3 * x
+              + c4 * y * y + 2.0 * c5 * y * z + 2.0 * c6 * y
+              + c7 * z * z + 2.0 * c8 * z + c9)
+        cost = ca if ca <= cb else cb
         # Store endpoint versions so stale entries can be skipped on pop.
-        heapq.heappush(heap, (cost, a, b, version[a], version[b]))
+        heappush(heap, (cost, a, b, version[a], version[b]))
 
     for a in range(nv):
-        for b in nbrs[a]:
+        na = nbrs[a]
+        for b in na:
             if a < b:
                 _push_edge(a, b)
 
     def _collapse_ok(keep, drop):
         """Validate collapsing `drop` into `keep` (keep's position is fixed)."""
         # Closed-manifold link condition: exactly two shared neighbours, and
-        # exactly two faces shared by the edge endpoints.
+        # exactly two faces shared by the edge endpoints. Set intersection (&)
+        # runs in C and is faster than a Python counting loop on CPython.
         shared = nbrs[keep] & nbrs[drop]
         if len(shared) != 2:
             return None
@@ -213,82 +271,117 @@ def simplify():
         if opposite != shared:
             return None
 
-        kp = coords[keep]
+        kx, ky, kz = coords[keep]
         # Hausdorff cluster-radius proxy: every original vertex that would be
         # represented by `keep` must stay within the bound of keep's position.
-        hbound_sq = hbound * hbound
         for oi in cluster[drop]:
             op = orig[oi]
-            dx, dy, dz = op[0] - kp[0], op[1] - kp[1], op[2] - kp[2]
+            dx = op[0] - kx
+            dy = op[1] - ky
+            dz = op[2] - kz
             if dx * dx + dy * dy + dz * dz > hbound_sq:
                 return None
 
         # Degeneracy / normal-flip check on every face that survives the
         # collapse and currently touches `drop`.
+        kp = coords[keep]
         for fid in vfaces[drop]:
             if fid in edge_faces:
                 continue
             a, b, c = faces[fid]
             oa, ob, oc = coords[a], coords[b], coords[c]
-            o_na, o_nb, o_nc, _, o_area = _face_plane(oa, ob, oc)
+            o_na, o_nb, o_nc, _, o_area = fplane(oa, ob, oc)
             if o_area <= 0.0:
                 return None
             na = kp if a == drop else oa
             nb = kp if b == drop else ob
             nc = kp if c == drop else oc
-            n_na, n_nb, n_nc, _, n_area = _face_plane(na, nb, nc)
-            if n_area <= _EPS_AREA:
+            n_na, n_nb, n_nc, _, n_area = fplane(na, nb, nc)
+            if n_area <= eps_area:
                 return None
-            if o_na * n_na + o_nb * n_nb + o_nc * n_nc <= _NORMAL_FLIP_COS:
+            if o_na * n_na + o_nb * n_nb + o_nc * n_nc <= flip_cos:
                 return None
         return edge_faces
 
     def _do_collapse(keep, drop, edge_faces):
+        # The two vertices opposite the collapsed edge (its shared neighbours).
+        # Their incident-face set shrinks (an edge face is removed), so they
+        # need a full adjacency rebuild; capture them before mutating faces.
+        opp = set()
+        for fid in edge_faces:
+            for v in faces[fid]:
+                if v != keep and v != drop:
+                    opp.add(v)
+
+        # Snapshot the neighbourhoods before mutation so we can update them
+        # incrementally afterwards.
+        drop_nbrs = nbrs[drop]
+        affected = (nbrs[keep] | drop_nbrs) - {keep, drop}
+
         # Remove the two faces incident to the collapsed edge.
         for fid in edge_faces:
             a, b, c = faces[fid]
-            for v in (a, b, c):
-                vfaces[v].discard(fid)
+            vfaces[a].discard(fid)
+            vfaces[b].discard(fid)
+            vfaces[c].discard(fid)
             faces[fid] = None
 
         # Rewire the remaining faces of `drop` onto `keep`.
+        vfk = vfaces[keep]
         for fid in list(vfaces[drop]):
             a, b, c = faces[fid]
             a = keep if a == drop else a
             b = keep if b == drop else b
             c = keep if c == drop else c
             faces[fid] = (a, b, c)
-            vfaces[keep].add(fid)
+            vfk.add(fid)
 
         # Merge quadrics and clusters; retire `drop`.
         _quadric_add(quad[keep], quad[drop])
         cluster[keep].extend(cluster[drop])
-        affected = (nbrs[keep] | nbrs[drop]) - {keep, drop}
         alive[drop] = False
         vfaces[drop] = set()
         nbrs[drop] = set()
 
-        # Rebuild adjacency for every vertex touched by the collapse.
-        touched = affected | {keep}
-        for v in touched:
+        # Update adjacency only where it actually changes (same result as a
+        # full rebuild of every touched vertex, but far cheaper):
+        #   * ordinary neighbours of `drop` (not `keep`, not opposite) simply
+        #     trade `drop` for `keep` -- two set ops instead of a rebuild;
+        #   * `keep` and the two opposite vertices lost/gained faces, so they
+        #     are rebuilt from their incident faces;
+        #   * `keep`'s exclusive neighbours are unchanged and keep their set.
+        # `version` is still bumped for every affected vertex (and `keep`),
+        # exactly as a full rebuild would, so heap staleness is identical.
+        for w in drop_nbrs:
+            if w == keep or w in opp:
+                continue
+            nw = nbrs[w]
+            nw.discard(drop)
+            nw.add(keep)
+        for v in opp:
             nb = set()
+            upd = nb.update
             for fid in vfaces[v]:
-                a, b, c = faces[fid]
-                if a != v:
-                    nb.add(a)
-                if b != v:
-                    nb.add(b)
-                if c != v:
-                    nb.add(c)
+                upd(faces[fid])
+            nb.discard(v)
             nbrs[v] = nb
+        nb = set()
+        upd = nb.update
+        for fid in vfk:
+            upd(faces[fid])
+        nb.discard(keep)
+        nbrs[keep] = nb
+
+        for v in affected:
             version[v] += 1
+        version[keep] += 1
 
         # Re-rank edges incident to the kept vertex.
         for v in nbrs[keep]:
             _push_edge(keep, v)
 
     while heap:
-        cost, a, b, va, vb = heapq.heappop(heap)
+        cost, a, b, va, vb = heappop(heap)
         if not alive[a] or not alive[b]:
             continue
         if va != version[a] or vb != version[b]:

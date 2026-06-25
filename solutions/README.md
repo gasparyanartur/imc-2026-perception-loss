@@ -9,6 +9,7 @@ a directory implement the same algorithm and produce identical output.
 |-------------|-----------------------------|-----------------------------------------------------------------------------|
 | `initial/`  | `initial.py`, `initial.cpp` | I/O-only scaffold: reads the mesh, runs an empty `simplify()`, writes it back. |
 | `baseline/` | `baseline.py`, `baseline.cpp` | Endpoint-only QEM edge collapse (report Solution 2).                        |
+| `iter1-runtime/` | `iter1-runtime.py`     | Runtime-optimized Python variant of `baseline.py`: byte-identical output, faster `simplify()` (surgical adjacency updates, inlined quadric math, fewer allocations). |
 
 The evaluation harness (`evaluate.sh` / `evaluate_dataset.py`) defaults to
 `solutions/baseline/baseline.py`. Point it at another variant with
