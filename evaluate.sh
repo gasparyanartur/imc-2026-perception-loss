@@ -24,7 +24,7 @@
 #   DATASET_DIR   directory of input meshes to score   (default: data/ppsurf)
 #   OUTPUTS_DIR   directory for logs                   (default: outputs)
 #   EVAL_SCRIPT   dataset evaluator script             (default: evaluate_dataset.py)
-#   RESOLUTION    render resolution                    (default: evaluator default)
+#   RESOLUTION    render resolution                    (default: native 1024)
 #   PYTHON        python interpreter                   (default: python3)
 #
 # Exit codes:

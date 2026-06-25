@@ -41,9 +41,13 @@ import tempfile
 import evaluate
 
 # Default render resolution for the multi-mesh harness. The native grader uses
-# 1024 (see docs/report.md 2.2); a smaller default keeps iteration over many
-# meshes fast. Override with --resolution 1024 for real-grader-like scores.
-DEFAULT_RESOLUTION = 256
+# 1024 (see docs/report.md 2.2), and the camera focal length is calibrated for
+# that resolution: lower values do not just lower fidelity, they narrow the
+# field of view and crop the object, which *changes* the SSIM and can flip the
+# validity verdict. To make the reported score reflect real (final) grading
+# performance, the harness defaults to the native resolution. Pass a smaller
+# --resolution only for quick, non-representative previews.
+DEFAULT_RESOLUTION = evaluate.RESOLUTION  # 1024 (native grader resolution)
 DEFAULT_TIMEOUT = 300.0
 
 

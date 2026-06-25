@@ -197,9 +197,13 @@ python3 evaluate_dataset.py --solver solution.py --dataset data/ppsurf \
     --resolution 1024 --summary
 ```
 
-The default render resolution for the multi-mesh harness is `256` (fast
-iteration over many meshes); pass `--resolution 1024` for real-grader-like
-scores. Only NumPy is required (SciPy speeds up the Hausdorff step).
+The default render resolution for the multi-mesh harness is the native grader
+resolution `1024`, so the reported score reflects real (final) grading
+performance. The focal length is calibrated for 1024; passing a smaller
+`--resolution` narrows the field of view and crops the object, which changes the
+SSIM and can flip the validity verdict, so use it only for quick,
+non-representative previews. Only NumPy is required (SciPy speeds up the
+Hausdorff step).
 
 ---
 
@@ -227,7 +231,7 @@ It:
 | `DATASET_DIR` | `data/ppsurf`         | directory of input meshes        |
 | `OUTPUTS_DIR` | `outputs`             | directory for logs               |
 | `EVAL_SCRIPT` | `evaluate_dataset.py` | dataset evaluator script         |
-| `RESOLUTION`  | evaluator default     | render resolution                |
+| `RESOLUTION`  | `1024` (native grader) | render resolution               |
 | `PYTHON`      | `python3`             | python interpreter               |
 
 ### Exit codes
@@ -241,8 +245,8 @@ It:
 ### Usage
 
 ```sh
-./evaluate.sh                          # default solver, dataset, resolution
-RESOLUTION=1024 ./evaluate.sh          # native-resolution score
+./evaluate.sh                          # default solver, dataset, native 1024 res
+RESOLUTION=256 ./evaluate.sh           # fast preview only (not a real-grader score)
 SCRIPT_FILE=solution.py DATASET_DIR=data/ppsurf ./evaluate.sh
 ```
 

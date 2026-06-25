@@ -34,8 +34,8 @@ is only valid when **every** mesh in the dataset passes — evaluating on a sing
 mesh would hide solvers that fail on real geometry.
 
 ```sh
-./evaluate.sh                 # default solver, dataset, resolution
-RESOLUTION=1024 ./evaluate.sh # native-resolution score
+./evaluate.sh                 # default solver, dataset, native 1024 grader resolution
+RESOLUTION=256 ./evaluate.sh  # fast preview only (not a real-grader score)
 ```
 
 Regenerate or grow the dataset with `datasets/prepare_ppsurf.py` (requires

@@ -23,10 +23,13 @@ Call the evaluation harness from the repository root:
 ./evaluate.sh
 ```
 
-To score at native (real-grader-like) resolution:
+This scores at the native, real-grader resolution (1024) by default, so the
+result reflects real (final) grading performance. For a quick, non-representative
+preview you can render at a lower resolution (this narrows the camera field of
+view and changes the score, so never accept a change based on it):
 
 ```sh
-RESOLUTION=1024 ./evaluate.sh
+RESOLUTION=256 ./evaluate.sh   # fast preview only -- NOT a real-grader score
 ```
 
 `evaluate.sh` will:
