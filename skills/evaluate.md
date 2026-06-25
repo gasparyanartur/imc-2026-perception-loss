@@ -35,12 +35,12 @@ RESOLUTION=1024 ./evaluate.sh
 
 ## Interpreting the result
 
-- **Exit code `0`** — the submission is valid **and** is not worse than the
-  previous best. Keep the change.
+- **Exit code `0`** — the submission is valid **and** strictly beats the
+  previous best (or there is no previous valid run). Keep the change.
 - **Exit code `1`** — one of:
   - the submission is **invalid** (failed the manifold / Hausdorff / SSIM gate),
   - the solver or evaluator **errored**, or
-  - the submission is valid but is a **regression** (`NOT IMPROVED`) versus the
+  - the submission is valid but did **not improve** (`NOT IMPROVED`) on the
     best previous valid run.
 
   In every `1` case, do **not** accept the change: read the logged
@@ -54,6 +54,11 @@ better). A new model is only an improvement if it is **valid** and its
 `CompressionRate` is **strictly greater** than the best previously logged valid
 run. The `outputs/` log history is what makes this comparison possible, so do
 not delete it between iterations.
+
+Bound the search: make at most **5 attempts** to beat the previous best. If none
+of the 5 attempts improves the score, stop iterating and report a short
+**post-mortem** to the user — your hypotheses for why the score did not improve
+and suggested next directions — rather than looping indefinitely.
 
 ## Scope
 

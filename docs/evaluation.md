@@ -154,8 +154,9 @@ It:
 
 ### Exit codes
 
-- `0` — valid submission **and** not worse than the previous best;
-- `1` — invalid submission, solver/evaluator error, or a regression vs. the
+- `0` — valid submission **and** strictly better than the previous best (or no
+  previous valid run to compare against);
+- `1` — invalid submission, solver/evaluator error, or no improvement vs. the
   best previous valid run.
 
 ### Usage

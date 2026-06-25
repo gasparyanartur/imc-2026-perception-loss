@@ -23,6 +23,13 @@ valid submission for the IMC 2026 challenge.
    **improves** on the previous best `CompressionRate`. If it is invalid, errors,
    or regresses, read the logged result in `outputs/`, diagnose, and iterate.
 
+4. **Bound the iteration.** Do not loop indefinitely. Make at most **5 attempts**
+   to produce a valid improvement over the previous best. If none of the 5
+   attempts improves the best `CompressionRate`, stop and write a short
+   **post-mortem** for the user: your hypotheses for why the score did not
+   improve (e.g. which validity gate blocks further reduction, where the
+   simplification plateaus) and suggested next directions.
+
 ## Scope
 
 For now, focus on the **Python** solution (`solution.py`), scored by

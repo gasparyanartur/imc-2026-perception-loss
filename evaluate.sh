@@ -23,8 +23,9 @@
 #   PYTHON       python interpreter              (default: python3)
 #
 # Exit codes:
-#   0  valid submission AND not worse than the previous best
-#   1  invalid submission, evaluator/solver error, or a regression vs. best
+#   0  valid submission AND strictly better than the previous best
+#      (or no previous valid run to compare against)
+#   1  invalid submission, evaluator/solver error, or no improvement vs. best
 set -u
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -161,8 +162,9 @@ if ! is_number "$new_rate"; then
     exit 1
 fi
 
-# Valid submission: tag the log filename with the compression metric.
-rate_label="$(awk "BEGIN{printf \"compr-%.4f\", $new_rate}")"
+# Valid submission: tag the log filename with the compression metric. new_rate
+# is already validated as a plain number above, so a direct printf is enough.
+rate_label="$(printf 'compr-%.4f' "$new_rate")"
 write_log "$rate_label"
 
 # --- step 4: compare against the best previous valid run --------------------
