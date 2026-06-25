@@ -25,14 +25,21 @@ its options.
 
 ## Iterating on a solution
 
-`evaluate.sh` runs the Python solver (`solution.py`), scores the result with
-`evaluate.py`, logs it to `outputs/<date>-<result>.txt`, and reports whether the
-new model beats the best previous valid run:
+`evaluate.sh` runs the Python solver (`solution.py`) across a **representative
+dataset** of meshes (`data/ppsurf/`, derived from the
+[ppsurf dataset](https://huggingface.co/datasets/perler/ppsurf)), scores each
+with `evaluate.py`, logs the aggregate to `outputs/<date>-<result>.txt`, and
+reports whether the new model beats the best previous valid run. The submission
+is only valid when **every** mesh in the dataset passes — evaluating on a single
+mesh would hide solvers that fail on real geometry.
 
 ```sh
-./evaluate.sh                 # default solver, input, resolution
+./evaluate.sh                 # default solver, dataset, resolution
 RESOLUTION=1024 ./evaluate.sh # native-resolution score
 ```
+
+Regenerate or grow the dataset with `datasets/prepare_ppsurf.py` (requires
+`trimesh`); see [`docs/evaluation.md`](docs/evaluation.md) for details.
 
 Coding agents should follow [`AGENTS.md`](AGENTS.md) and use the
 [`skills/evaluate.md`](skills/evaluate.md) skill to drive this loop.
@@ -40,8 +47,8 @@ Coding agents should follow [`AGENTS.md`](AGENTS.md) and use the
 ## Tests
 
 The evaluator is covered by a pytest suite under `tests/` that validates mesh
-I/O, the validity gate, rendering, SSIM, Hausdorff, and the end-to-end pipeline
-against the provided `data/` samples.
+I/O, the validity gate, rendering, SSIM, Hausdorff, the end-to-end pipeline, and
+the multi-sample dataset harness.
 
 ```sh
 pip install numpy pytest   # scipy is optional (speeds up Hausdorff)

@@ -1,30 +1,35 @@
 #!/usr/bin/env bash
 #
-# evaluate.sh -- run the Python solution, score it with the offline evaluator,
-# log the result, and check that the new score beats previous runs.
+# evaluate.sh -- run the Python solution across the representative dataset,
+# score it with the offline evaluator, log the result, and check that the new
+# aggregate score beats previous runs.
 #
 # Pipeline (Python only, for now):
-#   1. Run the solver (solution.py) on the input mesh to produce a simplified mesh.
-#   2. Score it with evaluate.py against the original mesh.
+#   1. Run the solver (solution.py) on EVERY mesh in the dataset directory and
+#      score each one with evaluate.py (via evaluate_dataset.py).
+#   2. Aggregate the per-scenario verdicts: the submission is VALID only when
+#      every scenario passes (SCENARIOS_PASSED == SCENARIOS_TOTAL); the reported
+#      CompressionRate is the mean over all scenarios.
 #   3. Append a timestamped log to outputs/<date>-<result>.txt, where <result>
-#      is the metric (compression rate) on success or "error"/"invalid" on failure.
-#   4. Compare the new compression rate against the best previous VALID run and
-#      report whether the new model improved.
+#      is the mean compression rate on success or "error"/"invalid" on failure.
+#   4. Compare the new mean compression rate against the best previous VALID run
+#      and report whether the new model improved.
 #
-# The ranking objective is CompressionRate (higher is better), counted only for
-# submissions that pass every validity gate (see docs/evaluation.md).
+# Evaluating on a representative dataset (not a single mesh) is what catches a
+# solver that passes a trivial case but fails real meshes -- the "passes N/M
+# scenarios" situation.
 #
 # Configuration (environment variables):
-#   SCRIPT_FILE  solver script to run            (default: solution.py)
-#   INPUT_PATH   original mesh fed to the solver (default: data/sample-input.txt)
-#   OUTPUTS_DIR  directory for logs              (default: outputs)
-#   EVAL_SCRIPT  evaluator script                (default: evaluate.py)
-#   RESOLUTION   render resolution               (default: evaluate.py default)
-#   PYTHON       python interpreter              (default: python3)
+#   SCRIPT_FILE   solver script to run                 (default: solution.py)
+#   DATASET_DIR   directory of input meshes to score   (default: data/ppsurf)
+#   OUTPUTS_DIR   directory for logs                   (default: outputs)
+#   EVAL_SCRIPT   dataset evaluator script             (default: evaluate_dataset.py)
+#   RESOLUTION    render resolution                    (default: evaluator default)
+#   PYTHON        python interpreter                   (default: python3)
 #
 # Exit codes:
-#   0  valid submission AND strictly better than the previous best
-#      (or no previous valid run to compare against)
+#   0  valid submission (all scenarios pass) AND strictly better mean
+#      compression than the previous best (or no previous valid run)
 #   1  invalid submission, evaluator/solver error, or no improvement vs. best
 set -u
 
@@ -32,9 +37,9 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$repo_root" || exit 1
 
 script_file=${SCRIPT_FILE:-"solution.py"}
-input_path=${INPUT_PATH:-"data/sample-input.txt"}
+dataset_dir=${DATASET_DIR:-"data/ppsurf"}
 outputs_dir=${OUTPUTS_DIR:-"outputs"}
-eval_script=${EVAL_SCRIPT:-"evaluate.py"}
+eval_script=${EVAL_SCRIPT:-"evaluate_dataset.py"}
 python_bin=${PYTHON:-"python3"}
 
 mkdir -p "$outputs_dir"
@@ -50,13 +55,12 @@ is_number() {
 }
 
 timestamp="$(date +%Y%m%d-%H%M%S)"
-simplified_path="$outputs_dir/py-$timestamp.mesh.txt"
 
 # --- helper: compute best previous VALID compression rate -------------------
 # Scans existing logs (before this run) for VALID results and prints the max
 # COMPRESSION_RATE, or nothing if there is no prior valid run.
 best_previous_rate() {
-    local best="" rate result f
+    local best="" rate f
     for f in "$outputs_dir"/*.txt; do
         [ -e "$f" ] || continue
         grep -q '^RESULT=VALID$' "$f" || continue
@@ -74,7 +78,7 @@ prev_best="$(best_previous_rate)"
 
 # --- helper: finalize a log file under the result-tagged name ---------------
 write_log() {
-    # $1 = result label used in the filename; remaining args ignored.
+    # $1 = result label used in the filename.
     local label="$1"
     local log_path="$outputs_dir/$timestamp-$label.txt"
     mv "$tmp_log" "$log_path"
@@ -87,37 +91,19 @@ trap 'rm -f "$tmp_log"' EXIT
 {
     echo "# evaluate.sh run $timestamp"
     echo "SOLVER=$script_file"
-    echo "INPUT=$input_path"
+    echo "DATASET=$dataset_dir"
     echo "EVALUATOR=$eval_script"
     echo "RESOLUTION=${RESOLUTION:-default}"
     echo
 } >> "$tmp_log"
 
-# --- step 1: run the solver -------------------------------------------------
-solver_err="$(mktemp)"
-if ! "$python_bin" "$script_file" < "$input_path" > "$simplified_path" 2> "$solver_err"; then
-    {
-        echo "RESULT=ERROR"
-        echo "STAGE=solver"
-        echo "--- solver stderr ---"
-        cat "$solver_err"
-    } >> "$tmp_log"
-    rm -f "$solver_err"
-    cat "$tmp_log"
-    write_log "error"
-    echo "FAILED: solver ($script_file) returned a non-zero exit code." >&2
-    exit 1
-fi
-rm -f "$solver_err"
-
-# --- step 2: score the simplified mesh --------------------------------------
-eval_args=("$eval_script" "$input_path" "$simplified_path" "--summary")
+# --- step 1+2: run the solver across the dataset and score ------------------
+eval_args=("$eval_script" "--solver" "$script_file" "--dataset" "$dataset_dir"
+           "--python" "$python_bin" "--summary")
 if [ -n "${RESOLUTION:-}" ]; then
     eval_args+=("--resolution" "$RESOLUTION")
 fi
 
-# A single --summary run prints the full human report followed by a
-# machine-readable KEY=VALUE block.
 everr="$(mktemp)"
 output="$("$python_bin" "${eval_args[@]}" 2> "$everr")"
 summary="$(printf '%s\n' "$output" | grep -E '^[A-Z_]+=')"
@@ -145,12 +131,14 @@ rm -f "$everr"
 # --- step 3: parse the result -----------------------------------------------
 result="$(printf '%s\n' "$summary" | grep -m1 '^RESULT=' | cut -d= -f2)"
 new_rate="$(printf '%s\n' "$summary" | grep -m1 '^COMPRESSION_RATE=' | cut -d= -f2)"
+passed="$(printf '%s\n' "$summary" | grep -m1 '^SCENARIOS_PASSED=' | cut -d= -f2)"
+total="$(printf '%s\n' "$summary" | grep -m1 '^SCENARIOS_TOTAL=' | cut -d= -f2)"
 
 cat "$tmp_log"
 
 if [ "$result" != "VALID" ]; then
     write_log "invalid"
-    echo "RESULT: INVALID submission -- not eligible for ranking." >&2
+    echo "RESULT: INVALID submission -- passed ${passed:-?}/${total:-?} scenarios; not eligible for ranking." >&2
     exit 1
 fi
 
@@ -162,18 +150,17 @@ if ! is_number "$new_rate"; then
     exit 1
 fi
 
-# Valid submission: tag the log filename with the compression metric. new_rate
-# is already validated as a plain number above, so a direct printf is enough.
+# Valid submission: tag the log filename with the mean compression metric.
 rate_label="$(printf 'compr-%.4f' "$new_rate")"
 write_log "$rate_label"
 
 # --- step 4: compare against the best previous valid run --------------------
 if [ -z "$prev_best" ] || ! is_number "$prev_best"; then
-    echo "RESULT: VALID. CompressionRate=$new_rate% (no previous valid run to compare)."
+    echo "RESULT: VALID (passed ${passed}/${total} scenarios). MeanCompressionRate=$new_rate% (no previous valid run to compare)."
     exit 0
 fi
 
-echo "RESULT: VALID. CompressionRate=$new_rate% vs previous best=$prev_best%"
+echo "RESULT: VALID (passed ${passed}/${total} scenarios). MeanCompressionRate=$new_rate% vs previous best=$prev_best%"
 if awk "BEGIN{exit !($new_rate > $prev_best)}"; then
     echo "IMPROVED: new model beats the previous best by $(awk "BEGIN{printf \"%.4f\", $new_rate - $prev_best}") points."
     exit 0

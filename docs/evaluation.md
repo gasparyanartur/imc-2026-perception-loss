@@ -127,44 +127,123 @@ step.
 
 ---
 
-## 3. The iteration harness (`evaluate.sh`)
+## 3. The representative dataset (`data/ppsurf`)
 
-`evaluate.sh` is the end-to-end loop used while iterating on the Python solver.
-It:
+A solver must generalize across many meshes, so the harness scores it on a
+**representative dataset** rather than a single mesh. Evaluating on one trivial
+mesh (e.g. a cube) hides solvers that fail on real geometry — the
+"passes N/M scenarios" situation.
 
-1. runs the solver (`solution.py` by default) on the input mesh to produce a
-   simplified mesh;
-2. scores it with `evaluate.py --summary`;
-3. writes a timestamped log to `outputs/<date>-<result>.txt`, where `<result>`
-   is the compression metric on success (e.g. `compr-11.1111`) or `invalid` /
-   `error` on failure;
-4. compares the new compression rate against the **best previous valid run**
-   recorded in `outputs/` and reports whether the model improved.
+`data/ppsurf/` holds meshes derived from the **ppsurf** dataset
+(<https://huggingface.co/datasets/perler/ppsurf>, also mirrored in the
+`cg-tuwien/ppsurf` GitHub repo). Each mesh is recentered on its bounding-box
+center and scaled into the unit sphere, then written in the challenge format
+(`V F` header, `v x y z`, 1-indexed `f i j k`). `data/ppsurf/MANIFEST.md`
+records each file's vertex/face counts and its source mesh.
 
-### Configuration
+### Regenerating / growing the dataset
 
-| Variable      | Default                 | Meaning                          |
-| ------------- | ----------------------- | -------------------------------- |
-| `SCRIPT_FILE` | `solution.py`           | solver script to run             |
-| `INPUT_PATH`  | `data/sample-input.txt` | original mesh fed to the solver  |
-| `OUTPUTS_DIR` | `outputs`               | directory for logs               |
-| `EVAL_SCRIPT` | `evaluate.py`           | evaluator script                 |
-| `RESOLUTION`  | evaluator default       | render resolution                |
-| `PYTHON`      | `python3`               | python interpreter               |
+`datasets/prepare_ppsurf.py` builds the dataset from ppsurf source meshes:
 
-### Exit codes
+```sh
+pip install trimesh   # required for preparation only
+python3 datasets/prepare_ppsurf.py --source /path/to/ppsurf/datasets \
+    --out data/ppsurf --num 20
+```
 
-- `0` — valid submission **and** strictly better than the previous best (or no
-  previous valid run to compare against);
-- `1` — invalid submission, solver/evaluator error, or no improvement vs. the
-  best previous valid run.
+It loads every `.ply`/`.obj`/`.stl`/`.off` under `--source`, normalizes and
+validates it (closed watertight 2-manifold, positive-area faces), and selects
+`--num` meshes spanning the vertex-count range so the set stays diverse.
+
+Obtaining ppsurf meshes:
+
+- A 10-mesh minimal set ships inside the ppsurf GitHub repo under
+  `datasets/abc_minimal/03_meshes` (clone `cg-tuwien/ppsurf`).
+- The full ABC / Famous / Thingi10k test sets are fetched by ppsurf's own
+  `datasets/download_testsets.py`; run that, then pass the extracted
+  `*/03_meshes` folders to `--source` to grow the set toward `--num`.
+
+---
+
+## 4. The multi-sample evaluator (`evaluate_dataset.py`)
+
+`evaluate_dataset.py` runs a solver across a whole dataset and aggregates the
+results. For each input mesh it:
+
+1. runs `SOLVER < input > simplified` (a subprocess, like the real grader);
+2. scores the pair with `evaluate.py`'s `evaluate()`;
+3. records the per-scenario verdict, compression, Hausdorff and SSIM.
+
+It prints a per-scenario table and a machine-readable `KEY=VALUE` block. The
+overall `RESULT` is `VALID` only when **every** scenario is valid; the aggregate
+`COMPRESSION_RATE` is the **mean** over all scenarios:
+
+```
+RESULT=VALID|INVALID
+SCENARIOS_TOTAL=<int>
+SCENARIOS_PASSED=<int>
+MEAN_COMPRESSION_RATE=<float>
+MIN_COMPRESSION_RATE=<float>
+COMPRESSION_RATE=<float>        # alias for the mean (kept stable for tooling)
+```
+
+The process exits `0` only if every scenario passed.
 
 ### Usage
 
 ```sh
-./evaluate.sh                          # default solver, input, resolution
+python3 evaluate_dataset.py --dataset data/ppsurf --summary
+python3 evaluate_dataset.py --solver solution.py --dataset data/ppsurf \
+    --resolution 1024 --summary
+```
+
+The default render resolution for the multi-mesh harness is `256` (fast
+iteration over many meshes); pass `--resolution 1024` for real-grader-like
+scores. Only NumPy is required (SciPy speeds up the Hausdorff step).
+
+---
+
+## 5. The iteration harness (`evaluate.sh`)
+
+`evaluate.sh` is the end-to-end loop used while iterating on the Python solver.
+It:
+
+1. runs the solver (`solution.py` by default) on **every** mesh in the dataset
+   directory and scores each with `evaluate.py` (via `evaluate_dataset.py`);
+2. aggregates the per-scenario verdicts — the submission is `VALID` only when
+   all scenarios pass; the reported `CompressionRate` is the mean over all
+   scenarios;
+3. writes a timestamped log to `outputs/<date>-<result>.txt`, where `<result>`
+   is the mean compression metric on success (e.g. `compr-78.2938`) or
+   `invalid` / `error` on failure;
+4. compares the new mean compression rate against the **best previous valid
+   run** recorded in `outputs/` and reports whether the model improved.
+
+### Configuration
+
+| Variable      | Default               | Meaning                          |
+| ------------- | --------------------- | -------------------------------- |
+| `SCRIPT_FILE` | `solution.py`         | solver script to run             |
+| `DATASET_DIR` | `data/ppsurf`         | directory of input meshes        |
+| `OUTPUTS_DIR` | `outputs`             | directory for logs               |
+| `EVAL_SCRIPT` | `evaluate_dataset.py` | dataset evaluator script         |
+| `RESOLUTION`  | evaluator default     | render resolution                |
+| `PYTHON`      | `python3`             | python interpreter               |
+
+### Exit codes
+
+- `0` — valid submission (all scenarios pass) **and** strictly better mean
+  compression than the previous best (or no previous valid run to compare
+  against);
+- `1` — invalid submission (one or more scenarios failed), solver/evaluator
+  error, or no improvement vs. the best previous valid run.
+
+### Usage
+
+```sh
+./evaluate.sh                          # default solver, dataset, resolution
 RESOLUTION=1024 ./evaluate.sh          # native-resolution score
-SCRIPT_FILE=solution.py INPUT_PATH=data/sample-input.txt ./evaluate.sh
+SCRIPT_FILE=solution.py DATASET_DIR=data/ppsurf ./evaluate.sh
 ```
 
 The `outputs/` directory is git-ignored; logs accumulate there so that score
