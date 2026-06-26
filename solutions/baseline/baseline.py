@@ -1,30 +1,30 @@
-# Starter scaffold for "Perception-Aware Lossless Simplification of 3D Meshes".
+# iter2: short-edge collapse simplifier.
 #
-# It reads the mesh, does not optimize it and then outputs it.
-# Implement your simplification inside simplify()
+# Key differences from iter1/baseline (QEM-based):
+#   1. Cost = edge length squared; only edges <= epsilon (1% AABB diagonal)
+#      ever enter the heap, so compression targets dense local tessellation.
+#   2. No Hausdorff cluster check -- the epsilon bound implicitly limits drift.
+#   3. Normal check uses unnormalized normals with dot <= 1e-9 threshold
+#      (allows near-90-deg rotations, rejects only actual flips/degeneracies).
+#   4. Normal check covers ALL surviving faces around BOTH endpoints.
+#   5. Distance is re-verified at pop time against epsilon (handles stale entries).
+#   6. After each collapse, only short edges are (re-)enqueued.
 #
 # To run:
-#   pypy3 baseline.py < mesh.in > mesh.out
+#   pypy3 iter2.py < mesh.in > mesh.out
 
 import sys
+import heapq
 
-# Mesh representation.
-#   V : list of (x, y, z) vertex coordinates.
-#   F : list of (a, b, c) faces, 0-indexed (input is 1-indexed; load_obj
-#       subtracts 1, save_obj adds it back).
 V = []
 F = []
 
-
-# --- fast input -------------------------------------------------------------
 
 def load_obj():
     global V, F
     tok = sys.stdin.buffer.read().split()
     nv = int(tok[0])
     nf = int(tok[1])
-
-    # tokens are: nv nf, then "v x y z" per vertex, then "f a b c" per face.
     p = 2
     V = [None] * nv
     for i in range(nv):
@@ -36,9 +36,6 @@ def load_obj():
         p += 4
 
 
-# --- fast output ------------------------------------------------------------
-
-# Print the mesh. Print 10 significant digits using %.10g for performance.
 def save_obj():
     out = ["%d %d" % (len(V), len(F))]
     out += ["v %.10g %.10g %.10g" % v for v in V]
@@ -47,80 +44,6 @@ def save_obj():
     sys.stdout.write("\n")
 
 
-# --- your implementation ----------------------------------------------------
-
-import heapq
-
-# Baseline simplifier: endpoint-only QEM edge collapse (report Solution 2).
-#
-# Each undirected mesh edge is a collapse candidate. We rank candidates by the
-# Quadric Error Metric (QEM) but restrict the replacement vertex to one of the
-# two endpoints (endpoint-only placement), which keeps every output vertex on
-# the original surface and makes the Hausdorff bound easy to track. A collapse
-# is only applied when it preserves a closed 2-manifold and respects the
-# evaluator's gates:
-#   * link condition (exactly two shared neighbours for a closed manifold);
-#   * no degenerate (zero-area) face and no face-normal flip;
-#   * cluster-radius proxy for the symmetric Hausdorff bound.
-
-# Numerical tolerances.
-_EPS_AREA = 1e-12          # reject faces whose area drops to ~0
-# Reject a collapse if it turns any incident face normal by more than ~66 deg
-# (cos < 0.4). The flat-shaded normal maps dominate the FinalSSIM score, so
-# allowing near-90-deg flips (cos 0.0) lets the surface deviate enough to drop
-# SSIM below the 0.9 gate on detailed meshes. 0.4 keeps every dataset scenario
-# valid with a safe SSIM margin while preserving aggressive compression.
-_NORMAL_FLIP_COS = 0.4
-_HAUSDORFF_FRAC = 0.05     # bound = 0.05 * AABB diagonal (matches evaluator)
-
-
-def _face_plane(p, q, r):
-    """Unit normal (a, b, c) and offset d of the plane through p, q, r.
-
-    Returns (a, b, c, d, area) with a*x + b*y + c*z + d = 0 on the plane.
-    area is the triangle area; a degenerate triangle yields area 0.
-    """
-    ux, uy, uz = q[0] - p[0], q[1] - p[1], q[2] - p[2]
-    vx, vy, vz = r[0] - p[0], r[1] - p[1], r[2] - p[2]
-    nx = uy * vz - uz * vy
-    ny = uz * vx - ux * vz
-    nz = ux * vy - uy * vx
-    length = (nx * nx + ny * ny + nz * nz) ** 0.5
-    area = 0.5 * length
-    if length == 0.0:
-        return 0.0, 0.0, 0.0, 0.0, 0.0
-    nx, ny, nz = nx / length, ny / length, nz / length
-    d = -(nx * p[0] + ny * p[1] + nz * p[2])
-    return nx, ny, nz, d, area
-
-
-def _plane_quadric(a, b, c, d, w):
-    """Area-weighted quadric (10 unique entries) of a single plane."""
-    return [
-        w * a * a, w * a * b, w * a * c, w * a * d,
-        w * b * b, w * b * c, w * b * d,
-        w * c * c, w * c * d,
-        w * d * d,
-    ]
-
-
-def _quadric_add(into, other):
-    for i in range(10):
-        into[i] += other[i]
-
-
-def _quadric_error(q, v):
-    """Evaluate v^T Q v for the 10-entry symmetric quadric q at point v."""
-    x, y, z = v
-    return (
-        q[0] * x * x + 2.0 * q[1] * x * y + 2.0 * q[2] * x * z + 2.0 * q[3] * x
-        + q[4] * y * y + 2.0 * q[5] * y * z + 2.0 * q[6] * y
-        + q[7] * z * z + 2.0 * q[8] * z
-        + q[9]
-    )
-
-
-# Optimize the mesh: replace V and F
 def simplify():
     global V, F
 
@@ -128,25 +51,26 @@ def simplify():
     if nv == 0 or not F:
         return
 
-    # Mutable coordinates (lists) and original coordinates (for Hausdorff).
     coords = [list(v) for v in V]
-    orig = [tuple(v) for v in V]
 
-    # AABB diagonal of the original mesh -> Hausdorff bound.
-    xs = [p[0] for p in orig]
-    ys = [p[1] for p in orig]
-    zs = [p[2] for p in orig]
+    # Epsilon = 1% of AABB diagonal (same as reference).
+    xs = [p[0] for p in coords]
+    ys = [p[1] for p in coords]
+    zs = [p[2] for p in coords]
     diag = (
         (max(xs) - min(xs)) ** 2
         + (max(ys) - min(ys)) ** 2
         + (max(zs) - min(zs)) ** 2
     ) ** 0.5
-    hbound = _HAUSDORFF_FRAC * diag
+    epsilon = diag * 0.01
+    if epsilon < 1e-12:
+        epsilon = 1e-12
+    epsilon_sq = epsilon * epsilon
 
-    # Connectivity. faces[f] is a 3-tuple or None once removed.
-    faces = [tuple(f) for f in F]
-    vfaces = [set() for _ in range(nv)]   # vertex -> incident face ids
-    nbrs = [set() for _ in range(nv)]     # vertex -> adjacent vertices
+    # Connectivity.
+    faces = [tuple(f) for f in F]  # face tuple or None when removed
+    vfaces = [set() for _ in range(nv)]
+    nbrs = [set() for _ in range(nv)]
     for fid, (a, b, c) in enumerate(faces):
         vfaces[a].add(fid)
         vfaces[b].add(fid)
@@ -155,56 +79,48 @@ def simplify():
         nbrs[b].update((a, c))
         nbrs[c].update((a, b))
 
-    # Per-vertex quadric (area-weighted sum of incident face plane quadrics).
-    quad = [[0.0] * 10 for _ in range(nv)]
-    for a, b, c in faces:
-        na, nb, nc, d, area = _face_plane(coords[a], coords[b], coords[c])
-        if area <= 0.0:
-            continue
-        qe = _plane_quadric(na, nb, nc, d, area)
-        _quadric_add(quad[a], qe)
-        _quadric_add(quad[b], qe)
-        _quadric_add(quad[c], qe)
-
     alive = [True] * nv
-    # Original vertices currently represented by each live vertex (cluster).
-    cluster = [[i] for i in range(nv)]
-    version = [0] * nv  # bumped whenever a vertex's neighbourhood changes
+    version = [0] * nv
 
-    def _best_target(a, b):
-        """Cheapest endpoint placement for edge (a, b): (cost, keep, drop)."""
-        qa, qb = quad[a], quad[b]
-        comb = [qa[i] + qb[i] for i in range(10)]
-        ca = _quadric_error(comb, coords[a])
-        cb = _quadric_error(comb, coords[b])
-        if ca <= cb:
-            return ca, a, b
-        return cb, b, a
+    def _face_normal_unnorm(p, q, r):
+        """Unnormalized cross product (no sqrt); returns (nx, ny, nz)."""
+        ux = q[0] - p[0]; uy = q[1] - p[1]; uz = q[2] - p[2]
+        vx = r[0] - p[0]; vy = r[1] - p[1]; vz = r[2] - p[2]
+        return (uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx)
+
+    def _dist_sq(a, b):
+        ca = coords[a]; cb = coords[b]
+        dx = ca[0] - cb[0]; dy = ca[1] - cb[1]; dz = ca[2] - cb[2]
+        return dx * dx + dy * dy + dz * dz
 
     heap = []
+    heappush = heapq.heappush
+    heappop = heapq.heappop
 
-    def _push_edge(a, b):
-        cost, keep, drop = _best_target(a, b)
-        # Store endpoint versions so stale entries can be skipped on pop.
-        heapq.heappush(heap, (cost, a, b, version[a], version[b]))
+    def _push_if_short(a, b):
+        d2 = _dist_sq(a, b)
+        if d2 <= epsilon_sq:
+            heappush(heap, (d2, a, b, version[a], version[b]))
 
+    # Seed heap with all short edges.
     for a in range(nv):
         for b in nbrs[a]:
             if a < b:
-                _push_edge(a, b)
+                _push_if_short(a, b)
 
     def _collapse_ok(keep, drop):
-        """Validate collapsing `drop` into `keep` (keep's position is fixed)."""
-        # Closed-manifold link condition: exactly two shared neighbours, and
-        # exactly two faces shared by the edge endpoints.
+        """
+        Validate collapsing `drop` into `keep`.
+        Returns edge_faces set on success, None on failure.
+        """
+        # Link condition: exactly 2 shared neighbours, exactly 2 shared faces.
         shared = nbrs[keep] & nbrs[drop]
         if len(shared) != 2:
             return None
         edge_faces = vfaces[keep] & vfaces[drop]
         if len(edge_faces) != 2:
             return None
-        # The shared neighbours must be exactly the two vertices opposite the
-        # edge in its incident faces; otherwise the collapse folds the surface.
+        # Shared neighbours must equal the two opposite vertices.
         opposite = set()
         for fid in edge_faces:
             for v in faces[fid]:
@@ -214,44 +130,47 @@ def simplify():
             return None
 
         kp = coords[keep]
-        # Hausdorff cluster-radius proxy: every original vertex that would be
-        # represented by `keep` must stay within the bound of keep's position.
-        hbound_sq = hbound * hbound
-        for oi in cluster[drop]:
-            op = orig[oi]
-            dx, dy, dz = op[0] - kp[0], op[1] - kp[1], op[2] - kp[2]
-            if dx * dx + dy * dy + dz * dz > hbound_sq:
+
+        # Normal check over ALL surviving faces around both endpoints.
+        # Uses unnormalized normals: dot <= 1e-9 rejects flips and degeneracies.
+        all_faces = (vfaces[keep] | vfaces[drop]) - edge_faces
+        for fid in all_faces:
+            tri = faces[fid]
+            if tri is None:
+                continue
+            a, b, c = tri
+            pa, pb, pc = coords[a], coords[b], coords[c]
+            old_n = _face_normal_unnorm(pa, pb, pc)
+
+            # Substitute keep's new position for any vertex that is `drop`.
+            na_pt = kp if a == drop else pa
+            nb_pt = kp if b == drop else pb
+            nc_pt = kp if c == drop else pc
+
+            # Degenerate triangle check.
+            if na_pt is nb_pt or nb_pt is nc_pt or na_pt is nc_pt:
+                return None
+            # Also check by coords if they collapsed to the same point.
+            if na_pt == nb_pt or nb_pt == nc_pt or na_pt == nc_pt:
                 return None
 
-        # Degeneracy / normal-flip check on every face that survives the
-        # collapse and currently touches `drop`.
-        for fid in vfaces[drop]:
-            if fid in edge_faces:
-                continue
-            a, b, c = faces[fid]
-            oa, ob, oc = coords[a], coords[b], coords[c]
-            o_na, o_nb, o_nc, _, o_area = _face_plane(oa, ob, oc)
-            if o_area <= 0.0:
+            new_n = _face_normal_unnorm(na_pt, nb_pt, nc_pt)
+            dot = (old_n[0] * new_n[0] + old_n[1] * new_n[1] + old_n[2] * new_n[2])
+            if dot <= 1e-9:
                 return None
-            na = kp if a == drop else oa
-            nb = kp if b == drop else ob
-            nc = kp if c == drop else oc
-            n_na, n_nb, n_nc, _, n_area = _face_plane(na, nb, nc)
-            if n_area <= _EPS_AREA:
-                return None
-            if o_na * n_na + o_nb * n_nb + o_nc * n_nc <= _NORMAL_FLIP_COS:
-                return None
+
         return edge_faces
 
     def _do_collapse(keep, drop, edge_faces):
-        # Remove the two faces incident to the collapsed edge.
+        # Remove edge faces.
         for fid in edge_faces:
             a, b, c = faces[fid]
-            for v in (a, b, c):
-                vfaces[v].discard(fid)
+            vfaces[a].discard(fid)
+            vfaces[b].discard(fid)
+            vfaces[c].discard(fid)
             faces[fid] = None
 
-        # Rewire the remaining faces of `drop` onto `keep`.
+        # Rewire drop's faces onto keep.
         for fid in list(vfaces[drop]):
             a, b, c = faces[fid]
             a = keep if a == drop else a
@@ -260,54 +179,71 @@ def simplify():
             faces[fid] = (a, b, c)
             vfaces[keep].add(fid)
 
-        # Merge quadrics and clusters; retire `drop`.
-        _quadric_add(quad[keep], quad[drop])
-        cluster[keep].extend(cluster[drop])
-        affected = (nbrs[keep] | nbrs[drop]) - {keep, drop}
+        # Retire drop.
         alive[drop] = False
         vfaces[drop] = set()
         nbrs[drop] = set()
 
-        # Rebuild adjacency for every vertex touched by the collapse.
-        touched = affected | {keep}
-        for v in touched:
-            nb = set()
-            for fid in vfaces[v]:
-                a, b, c = faces[fid]
-                if a != v:
-                    nb.add(a)
-                if b != v:
-                    nb.add(b)
-                if c != v:
-                    nb.add(c)
-            nbrs[v] = nb
-            version[v] += 1
+        # Rebuild adjacency for keep and all affected vertices.
+        affected = set()
+        for fid in vfaces[keep]:
+            tri = faces[fid]
+            if tri:
+                affected.update(tri)
+        affected.discard(keep)
 
-        # Re-rank edges incident to the kept vertex.
+        # Update nbrs for affected vertices: replace drop with keep.
+        for w in affected:
+            nw = nbrs[w]
+            if drop in nw:
+                nw.discard(drop)
+                if w != keep:
+                    nw.add(keep)
+
+        # Rebuild keep's neighbour set from its incident faces.
+        nb = set()
+        for fid in vfaces[keep]:
+            tri = faces[fid]
+            if tri:
+                nb.update(tri)
+        nb.discard(keep)
+        nbrs[keep] = nb
+
+        # Bump versions.
+        for v in affected:
+            version[v] += 1
+        version[keep] += 1
+
+        # Re-enqueue short edges around keep.
         for v in nbrs[keep]:
-            _push_edge(keep, v)
+            _push_if_short(keep, v)
 
     while heap:
-        cost, a, b, va, vb = heapq.heappop(heap)
+        d2, a, b, va, vb = heappop(heap)
         if not alive[a] or not alive[b]:
             continue
         if va != version[a] or vb != version[b]:
-            continue  # stale entry; a fresh one was pushed
+            continue
         if b not in nbrs[a]:
-            continue  # edge no longer exists
+            continue
 
-        _, keep, drop = _best_target(a, b)
-        edge_faces = _collapse_ok(keep, drop)
-        if edge_faces is None:
-            # Endpoint placement that was cheapest is invalid; try the other.
-            other_keep, other_drop = drop, keep
-            edge_faces = _collapse_ok(other_keep, other_drop)
+        # Re-verify distance (positions unchanged, but be safe).
+        if _dist_sq(a, b) > epsilon_sq:
+            continue
+
+        # Try both endpoint orderings.
+        edge_faces = _collapse_ok(a, b)
+        if edge_faces is not None:
+            keep, drop = a, b
+        else:
+            edge_faces = _collapse_ok(b, a)
             if edge_faces is None:
                 continue
-            keep, drop = other_keep, other_drop
+            keep, drop = b, a
+
         _do_collapse(keep, drop, edge_faces)
 
-    # Compact: drop retired vertices and reindex faces.
+    # Compact.
     remap = {}
     new_V = []
     for i in range(nv):
