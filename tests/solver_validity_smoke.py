@@ -67,16 +67,16 @@ def target_vertex_count(nv: int) -> int:
     if nv <= 10:
         return nv
     if nv <= 5000:
-        return max(10, int(nv * 0.40))
+        return max(10, int(nv * 0.30))
     if nv <= 25000:
-        return max(10, int(nv * 0.70))
+        return max(10, int(nv * 0.57))
     if nv <= 45000:
         return max(10, int(nv * 0.35))
     if nv <= 50000:
-        return max(10, int(nv * 0.30))
+        return max(10, int(nv * 0.27))
     if nv <= 400000:
-        return max(10, int(nv * 0.18))
-    return max(10, int(nv * 0.11))
+        return max(10, int(nv * 0.11))
+    return max(10, int(nv * 0.10))
 
 
 def torus(u_segments: int, v_segments: int,

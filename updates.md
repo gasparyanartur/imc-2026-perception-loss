@@ -63,3 +63,26 @@
   - `python3 tests/solver_validity_smoke.py simplifygeometry_v2_aggressive.cpp --bumpy --score` fails SSIM on `bumpy_5k` (`0.7263`), `bumpy_40k` (`0.8615`), and `bumpy_50k` (`0.8467`) despite valid topology and Hausdorff.
   - v1 on the same bumpy scoring stress also fails those three cases, but scores better on `bumpy_40k` (`0.8921` vs v2 `0.8615`), so the fixture is a detail-loss stress test rather than a perfect hidden-set proxy.
   - Conclusion: hidden `F`s may be a mix of scoring failures on detailed geometry (tests 4-5) and runtime failure on large geometry (tests 6-7). Local validation now has knobs to exercise both.
+- User updated `simplifygeometry.cpp` again; latest v1 is treated as the current official-best reference and left uncommitted/untouched.
+- v2 fast/accurate update:
+  - Replaced the slow endpoint-only v2 core with the current fast v1-style free-position QEM core.
+  - Added an O(1) scalar cluster-radius guard for free-position collapses:
+    `r_new = max(r_a + |p_a - p_new|, r_b + |p_b - p_new|)`.
+  - Reject collapse if `r_new > 0.05 * diagonal`. This fixes the local ppsurf Hausdorff failure class without returning to the slow endpoint-only cluster-list approach.
+  - Raised the small-tier target from 15% keep to 30% keep in v2 after generated smooth `torus_5k` failed SSIM at the 15% tier (`0.8851`). At 30% keep, `torus_5k` passes with SSIM `0.9242`.
+  - Updated `tests/solver_validity_smoke.py` target floors to match the new v2 tiers.
+- Latest local v2 results:
+  - `python3 tests/solver_validity_smoke.py simplifygeometry_v2_aggressive.cpp --cxxflags '-I /usr/include/eigen3' --large --score`
+    passes 5k/25k/40k/50k generated smooth tori. Worst SSIM: `0.9242` on `torus_5k`; `torus_50k` SSIM is `0.9260`.
+  - `python3 evaluate_dataset.py --python /tmp/simplifygeometry_v2_fast --solver ignored --dataset data/ppsurf --summary`
+    passes 10/10 local ppsurf meshes. Mean compression `42.169256%`.
+  - `python3 tests/solver_validity_smoke.py simplifygeometry_v2_aggressive.cpp --cxxflags '-I /usr/include/eigen3' --extreme --timeout 180`
+    passes generated 400k/1M topology/runtime. Runtime: `3.94s` for 400k, `13.03s` for 1M.
+  - Compared with latest v1 local ppsurf: v1 is faster/aggressive but still fails local `abc_00010045` by Hausdorff (`0.1640 > 0.1493`), while v2 passes that local case at the cost of lower compression.
+- Theory / graph-theory ideas to try next:
+  - **Planar patch dual-graph contraction:** build a face-dual graph, merge near-coplanar connected components, then contract/retriangulate only component interiors. The planar invariance theorem says this can preserve depth/normal maps almost exactly when boundaries stay fixed.
+  - **Six-view silhouette protection as a hitting-set problem:** mark primal edges that are silhouettes in any official camera; treat them as a protected edge set. Collapse candidates get a large penalty if they disconnect or move this protected graph.
+  - **Conflict-graph maximal independent set batching:** build a graph where two candidate collapses conflict if their one-rings touch. A maximal independent set of low-cost collapses can be applied in batches, reducing heap churn for large cases while preserving local validity checks.
+  - **Curvature-aware epsilon-net:** select survivors as an adaptive surface net with smaller radius near high normal variation / silhouette edges and larger radius on flat regions. Then constrain QEM collapses so every represented cluster stays inside its local epsilon.
+  - **Spectral/AMG-style heavy-edge matching:** use mesh graph coarsening ideas from algebraic multigrid to choose well-spaced edge contractions quickly, then run QEM refinement only near high projected-error regions.
+  - Most promising near-term novel direction: combine planar dual components plus conflict-graph batching. That directly attacks both known problems: compression on evaluator-invariant regions and runtime at 400k/1M scale.
