@@ -107,6 +107,25 @@ static const double EPS_AREA = 1e-12;     // reject faces whose area drops to ~0
 static const double NORMAL_FLIP_COS = 0.18;
 static const double HAUSDORFF_FRAC = 0.05;  // bound = 0.05 * AABB diagonal
 
+static int target_vertex_count(int nv) {
+    if (nv <= 10) return nv;
+    if (nv <= 5000) return max(10, (int)(nv * 0.40));
+    if (nv <= 25000) return max(10, (int)(nv * 0.70));
+    if (nv <= 45000) return max(10, (int)(nv * 0.35));
+    if (nv <= 50000) return max(10, (int)(nv * 0.30));
+    if (nv <= 400000) return max(10, (int)(nv * 0.18));
+    return max(10, (int)(nv * 0.11));
+}
+
+static double cost_cap_for_size(int nv, double diag) {
+    double diag_sq = diag * diag;
+    if (nv <= 5000) return 0.001 * diag_sq;
+    if (nv <= 25000) return 0.002 * diag_sq;
+    if (nv <= 50000) return 0.004 * diag_sq;
+    if (nv <= 400000) return 0.007 * diag_sq;
+    return 0.010 * diag_sq;
+}
+
 using Quadric = array<double, 10>;
 
 // Unit normal (a, b, c) and offset d of the plane through p, q, r, plus the
@@ -199,6 +218,8 @@ static void simplify() {
     double diag = sqrt(dx * dx + dy * dy + dz * dz);
     double hbound = HAUSDORFF_FRAC * diag;
     double hbound_sq = hbound * hbound;
+    int target_vertices = min(nv - 1, target_vertex_count(nv));
+    double cost_cap = cost_cap_for_size(nv, diag);
 
     // Connectivity. faces[f] uses {-1,-1,-1} once removed.
     int nf = (int)F.size();
@@ -403,7 +424,8 @@ static void simplify() {
         for (int v : nbrs[keep]) push_edge(keep, v);
     };
 
-    while (!heap.empty()) {
+    int alive_count = nv;
+    while (alive_count > target_vertices && !heap.empty()) {
         Edge top = heap.top();
         heap.pop();
         int a = top.a, b = top.b;
@@ -414,6 +436,7 @@ static void simplify() {
         double cost;
         int keep, drop;
         best_target(a, b, cost, keep, drop);
+        if (cost > cost_cap) break;
         array<int, 2> edge_faces{-1, -1};
         if (!collapse_ok(keep, drop, edge_faces)) {
             // Cheapest endpoint placement is invalid; try the other.
@@ -423,6 +446,7 @@ static void simplify() {
             drop = other_drop;
         }
         do_collapse(keep, drop, edge_faces);
+        --alive_count;
     }
 
     // Compact: drop retired vertices and reindex faces.
