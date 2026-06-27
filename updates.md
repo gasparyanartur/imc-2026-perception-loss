@@ -43,3 +43,23 @@
   - Updated `evaluate_cpp.sh` to accept `CXXFLAGS`, so Eigen-based solvers can be run locally as:
     `env "CXXFLAGS=-I /usr/include/eigen3" DATASET_DIR=data/sample-input.txt ./evaluate_cpp.sh simplifygeometry.cpp`.
   - Verified that command on `data/sample-input.txt`: 1/1 valid.
+- User retest after the above still reports official `VVVFFFF`; v1 reportedly passes all official tests, so local validation is still missing at least one hidden failure mode.
+- Local validation gap found:
+  - The original smoke test only checked generated-mesh topology through 50k vertices; it did not full-score generated meshes and did not exercise official-scale 400k/1M runtime.
+  - Extended `tests/solver_validity_smoke.py` with solver timing, optional full scoring (`--score`), Eigen compile flags (`--cxxflags` / `CXXFLAGS`), and extreme fixtures (`--extreme`) at 400k and 1M vertices.
+- New generated full-score validation for v2:
+  - `python3 tests/solver_validity_smoke.py simplifygeometry_v2_aggressive.cpp --large --score`
+  - Passed 5k, 25k, 40k, and 50k generated tori with full local `evaluate.evaluate()` at 1024.
+  - Lowest generated SSIM was `0.9268` on `torus_5k`, so generated scoring does not reproduce the hidden `F`s through test 5.
+- New extreme runtime validation:
+  - `python3 tests/solver_validity_smoke.py simplifygeometry_v2_aggressive.cpp --extreme --timeout 180`
+  - v2 passed topology at 400k and 1M, but solver runtime was `10.31s` for 400k and `37.73s` for 1M.
+  - `python3 tests/solver_validity_smoke.py simplifygeometry.cpp --cxxflags '-I /usr/include/eigen3' --extreme --timeout 180`
+  - v1 passed the same fixtures with `3.15s` for 400k and `9.79s` for 1M.
+  - Current best explanation for hidden v2 failures: endpoint-only v2 is valid but too slow/memory-heavy at large scale, likely exceeding the 21s official limit and producing failed/invalid large cases. v1's faster adjacency strategy explains why it can pass official while v2 fails.
+- New high-detail scoring stress:
+  - Added optional `--bumpy` fixtures to `tests/solver_validity_smoke.py`; these are higher-frequency bumpy tori through 50k vertices.
+  - `python3 tests/solver_validity_smoke.py simplifygeometry_v2_aggressive.cpp --bumpy` passes topology/runtime.
+  - `python3 tests/solver_validity_smoke.py simplifygeometry_v2_aggressive.cpp --bumpy --score` fails SSIM on `bumpy_5k` (`0.7263`), `bumpy_40k` (`0.8615`), and `bumpy_50k` (`0.8467`) despite valid topology and Hausdorff.
+  - v1 on the same bumpy scoring stress also fails those three cases, but scores better on `bumpy_40k` (`0.8921` vs v2 `0.8615`), so the fixture is a detail-loss stress test rather than a perfect hidden-set proxy.
+  - Conclusion: hidden `F`s may be a mix of scoring failures on detailed geometry (tests 4-5) and runtime failure on large geometry (tests 6-7). Local validation now has knobs to exercise both.

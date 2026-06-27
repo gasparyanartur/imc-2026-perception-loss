@@ -22,6 +22,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -36,6 +37,7 @@ class Case:
     name: str
     u_segments: int
     v_segments: int
+    kind: str = "torus"
 
 
 DEFAULT_CASES = [
@@ -46,6 +48,18 @@ DEFAULT_CASES = [
 LARGE_CASES = [
     Case("torus_40k", 200, 200),      # 40,000 vertices
     Case("torus_50k", 200, 250),      # 50,000 vertices
+]
+
+EXTREME_CASES = [
+    Case("torus_400k", 500, 800),     # 400,000 vertices, 800,000 faces
+    Case("torus_1m", 1000, 1000),     # 1,000,000 vertices, 2,000,000 faces
+]
+
+BUMPY_CASES = [
+    Case("bumpy_5k", 50, 100, "bumpy_torus"),
+    Case("bumpy_25k", 125, 200, "bumpy_torus"),
+    Case("bumpy_40k", 200, 200, "bumpy_torus"),
+    Case("bumpy_50k", 200, 250, "bumpy_torus"),
 ]
 
 
@@ -65,10 +79,15 @@ def target_vertex_count(nv: int) -> int:
     return max(10, int(nv * 0.11))
 
 
-def torus(u_segments: int, v_segments: int) -> evaluate.Mesh:
+def torus(u_segments: int, v_segments: int,
+          kind: str = "torus") -> evaluate.Mesh:
     """Build a consistently oriented triangular torus inside the unit sphere."""
-    major_radius = 0.60
-    minor_radius = 0.28
+    if kind == "bumpy_torus":
+        major_radius = 0.56
+        minor_radius = 0.23
+    else:
+        major_radius = 0.60
+        minor_radius = 0.28
     vertices: list[list[float]] = []
     for i in range(u_segments):
         u = 2.0 * math.pi * i / u_segments
@@ -78,11 +97,18 @@ def torus(u_segments: int, v_segments: int) -> evaluate.Mesh:
             v = 2.0 * math.pi * j / v_segments
             cv = math.cos(v)
             sv = math.sin(v)
-            ring_radius = major_radius + minor_radius * cv
+            local_minor = minor_radius
+            if kind == "bumpy_torus":
+                local_minor *= (
+                    1.0
+                    + 0.16 * math.sin(9.0 * u + 0.4) * math.sin(7.0 * v)
+                    + 0.06 * math.cos(17.0 * u - 3.0 * v)
+                )
+            ring_radius = major_radius + local_minor * cv
             vertices.append([
                 ring_radius * cu,
                 ring_radius * su,
-                minor_radius * sv,
+                local_minor * sv,
             ])
 
     def vid(i: int, j: int) -> int:
@@ -115,16 +141,18 @@ def write_mesh(mesh: evaluate.Mesh, path: Path) -> None:
             handle.write("f %d %d %d\n" % (f[0] + 1, f[1] + 1, f[2] + 1))
 
 
-def compile_solver(source: Path, out_bin: Path, cxx: str) -> None:
+def compile_solver(source: Path, out_bin: Path, cxx: str,
+                   cxxflags: list[str]) -> None:
     subprocess.run(
-        [cxx, "-O2", "-std=c++17", str(source), "-o", str(out_bin)],
+        [cxx, "-O2", "-std=c++17", *cxxflags, str(source), "-o", str(out_bin)],
         cwd=REPO_ROOT,
         check=True,
     )
 
 
 def run_solver(binary: Path, input_path: Path, output_path: Path,
-               timeout: float) -> None:
+               timeout: float) -> float:
+    start = time.monotonic()
     with input_path.open("rb") as fin, output_path.open("wb") as fout:
         subprocess.run(
             [str(binary)],
@@ -134,10 +162,12 @@ def run_solver(binary: Path, input_path: Path, output_path: Path,
             timeout=timeout,
             check=True,
         )
+    return time.monotonic() - start
 
 
-def check_case(case: Case, binary: Path, tmp: Path, timeout: float) -> bool:
-    original = torus(case.u_segments, case.v_segments)
+def check_case(case: Case, binary: Path, tmp: Path, timeout: float,
+               score: bool, resolution: int, score_max_vertices: int) -> bool:
+    original = torus(case.u_segments, case.v_segments, case.kind)
     original_validity = evaluate.check_validity(original, original)
     if not original_validity.ok:
         print(f"{case.name}: generated invalid fixture: {original_validity.reasons}")
@@ -146,7 +176,7 @@ def check_case(case: Case, binary: Path, tmp: Path, timeout: float) -> bool:
     input_path = tmp / f"{case.name}.in.txt"
     output_path = tmp / f"{case.name}.out.txt"
     write_mesh(original, input_path)
-    run_solver(binary, input_path, output_path, timeout)
+    elapsed = run_solver(binary, input_path, output_path, timeout)
 
     simplified = evaluate.load_mesh(str(output_path))
     validity = evaluate.check_validity(simplified, original)
@@ -156,19 +186,39 @@ def check_case(case: Case, binary: Path, tmp: Path, timeout: float) -> bool:
     keep = len(simplified.vertices) / len(original.vertices)
 
     status = "PASS" if validity.ok and enough_vertices else "FAIL"
-    print(
-        "%-12s %-4s original=%6d simplified=%6d keep=%6.2f%% min=%6d %s"
+    details = [
+        "%-12s %-4s original=%7d simplified=%7d keep=%6.2f%% min=%7d time=%7.2fs"
         % (
-            case.name,
-            status,
-            len(original.vertices),
-            len(simplified.vertices),
-            keep * 100.0,
-            min_vertices,
-            "; ".join(validity.reasons),
+            case.name, status, len(original.vertices), len(simplified.vertices),
+            keep * 100.0, min_vertices, elapsed,
         )
-    )
-    return validity.ok and enough_vertices
+    ]
+
+    ok = validity.ok and enough_vertices
+    if score and len(original.vertices) <= score_max_vertices:
+        result = evaluate.evaluate(original, simplified, resolution=resolution)
+        ok = ok and result.valid
+        details.append(
+            "score=%s compr=%7.3f%% haus=%8.4f/%8.4f ssim=%7.4f"
+            % (
+                "VALID" if result.valid else "INVALID",
+                result.compression_rate,
+                result.hausdorff,
+                result.hausdorff_bound,
+                result.final_ssim,
+            )
+        )
+    elif score:
+        details.append("score=SKIP(vertices>%d)" % score_max_vertices)
+
+    reasons = list(validity.reasons)
+    if not enough_vertices:
+        reasons.append("simplified below target floor")
+    if reasons:
+        details.append("; ".join(reasons))
+
+    print(" ".join(details), flush=True)
+    return ok
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -180,26 +230,55 @@ def main(argv: list[str] | None = None) -> int:
         help="C++ solver source to compile",
     )
     parser.add_argument("--cxx", default=os.environ.get("CXX", "g++"))
+    parser.add_argument(
+        "--cxxflags",
+        default=os.environ.get("CXXFLAGS", ""),
+        help="extra compiler flags, e.g. '-I /usr/include/eigen3'",
+    )
     parser.add_argument("--timeout", type=float, default=120.0)
     parser.add_argument(
         "--large",
         action="store_true",
         help="also run 40k/50k tier fixtures",
     )
+    parser.add_argument(
+        "--extreme",
+        action="store_true",
+        help="also run 400k/1m fixtures; this is intended for runtime/memory smoke",
+    )
+    parser.add_argument(
+        "--bumpy",
+        action="store_true",
+        help="also run higher-frequency bumpy torus fixtures through 50k",
+    )
+    parser.add_argument(
+        "--score",
+        action="store_true",
+        help="run the full local evaluator on generated cases up to --score-max-vertices",
+    )
+    parser.add_argument("--resolution", type=int, default=1024)
+    parser.add_argument("--score-max-vertices", type=int, default=50000)
     args = parser.parse_args(argv)
 
     source = (REPO_ROOT / args.source).resolve()
     cases = list(DEFAULT_CASES)
     if args.large:
         cases.extend(LARGE_CASES)
+    if args.bumpy:
+        cases.extend(BUMPY_CASES)
+    if args.extreme:
+        cases.extend(EXTREME_CASES)
 
     with tempfile.TemporaryDirectory(prefix="solver-smoke-") as tmp_name:
         tmp = Path(tmp_name)
         binary = tmp / "solver"
-        compile_solver(source, binary, args.cxx)
+        compile_solver(source, binary, args.cxx, args.cxxflags.split())
         ok = True
         for case in cases:
-            ok = check_case(case, binary, tmp, args.timeout) and ok
+            ok = check_case(
+                case, binary, tmp, args.timeout, args.score, args.resolution,
+                args.score_max_vertices,
+            ) and ok
     return 0 if ok else 1
 
 
