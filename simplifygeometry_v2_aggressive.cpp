@@ -28,6 +28,16 @@ using MeshV = Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
 using MeshF = Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>;
 static MeshV V;
 static MeshF F;
+struct DSU {
+    vector<int> p, r;
+    DSU(int n=0):p(n),r(n,0){for(int i=0;i<n;++i)p[i]=i;}
+    int find(int x){while(p[x]!=x){p[x]=p[p[x]];x=p[x];}return x;}
+    void unite(int a,int b){a=find(a);b=find(b);if(a==b)return;if(r[a]<r[b])swap(a,b);p[b]=a;if(r[a]==r[b])++r[a];}
+};
+static inline long long edge_key(int a,int b){
+    if(a>b)swap(a,b);
+    return (static_cast<long long>(a)<<32) ^ static_cast<unsigned int>(b);
+}
 static vector<char> slurp_stdin() {
     vector<char> buf; buf.reserve(1 << 27);
     char chunk[1 << 16]; size_t n;
@@ -107,15 +117,57 @@ static void simplify() {
     vector<unordered_map<int,vector<int>>> adj(nV);
     vector<Quadric> quadrics(nV);
     vector<Eigen::Vector3d> face_normals(nF);
+    vector<double> face_offsets(nF,0.0);
     for (int i=0;i<nF;++i){
         Eigen::Vector3d p1=V.row(F(i,0)),p2=V.row(F(i,1)),p3=V.row(F(i,2));
         double area=(p2-p1).cross(p3-p1).norm()/2.0;
         face_normals[i]=(p2-p1).cross(p3-p1).normalized();
+        face_offsets[i]=-face_normals[i].dot(p1);
         Quadric q=Quadric(p1,p2,p3);
         q.a*=area;q.b*=area;q.c*=area;q.d*=area;q.e*=area;q.f*=area;q.g*=area;q.h*=area;q.i*=area;q.j*=area;
         for(int j=0;j<3;++j) quadrics[F(i,j)]=quadrics[F(i,j)]+q;
         for(int j=0;j<3;++j){int v1=F(i,j),v2=F(i,(j+1)%3);adj[v1][v2].push_back(i);adj[v2][v1].push_back(i);}
     }
+    const double planar_normal_dot=0.9999995;
+    const double planar_offset_eps=1e-7*diagonal;
+    DSU face_dsu(nF);
+    for(int i=0;i<nV;++i)for(const auto& kv:adj[i]){
+        int j=kv.first;
+        if(i>=j||kv.second.size()!=2)continue;
+        int f0=kv.second[0],f1=kv.second[1];
+        if(face_normals[f0].dot(face_normals[f1])>planar_normal_dot &&
+           fabs(face_offsets[f0]-face_offsets[f1])<planar_offset_eps)
+            face_dsu.unite(f0,f1);
+    }
+    vector<int> planar_comp_size(nF,0);
+    for(int f=0;f<nF;++f)++planar_comp_size[face_dsu.find(f)];
+    unordered_set<long long> planar_edges;
+    unordered_map<long long,unsigned char> silhouette_edges;
+    vector<char> planar_boundary_vertex(nV,0);
+    size_t total_manifold_edges=0;
+    planar_edges.reserve((size_t)nF);
+    silhouette_edges.reserve((size_t)nF/4+1);
+    for(int i=0;i<nV;++i)for(const auto& kv:adj[i]){
+        int j=kv.first;
+        if(i>=j||kv.second.size()!=2)continue;
+        ++total_manifold_edges;
+        int f0=kv.second[0],f1=kv.second[1];
+        int c0=face_dsu.find(f0),c1=face_dsu.find(f1);
+        if(c0==c1 && planar_comp_size[c0]>=8)
+            planar_edges.insert(edge_key(i,j));
+        else {
+            planar_boundary_vertex[i]=1;
+            planar_boundary_vertex[j]=1;
+        }
+        unsigned char sil=0;
+        for(int axis=0;axis<3;++axis)
+            if(face_normals[f0](axis)*face_normals[f1](axis)<-1e-10) sil+=2;
+        if(sil) silhouette_edges[edge_key(i,j)]=sil;
+    }
+    double planar_edge_ratio=total_manifold_edges?((double)planar_edges.size()/(double)total_manifold_edges):0.0;
+    if(planar_edge_ratio>0.70) target_vertices=max(10,(int)(target_vertices*0.65));
+    else if(planar_edge_ratio>0.45) target_vertices=max(10,(int)(target_vertices*0.75));
+    else if(planar_edge_ratio>0.25) target_vertices=max(10,(int)(target_vertices*0.90));
     vector<double> curvature(nV,0.0);
     for(int v=0;v<nV;++v){
         vector<Eigen::Vector3d> norms;
@@ -138,7 +190,19 @@ static void simplify() {
         double curv_weight=1.0+0.5*(max_curv/M_PI);
         double len=(V.row(v1)-V.row(v2)).norm();
         double len_weight=1.0+0.2*(1.0-len/diagonal);
-        return {p,qerror*curv_weight*len_weight};
+        double planar_weight=1.0;
+        long long key=edge_key(v1,v2);
+        bool planar_edge=planar_edges.find(key)!=planar_edges.end();
+        if(planar_edge){
+            planar_weight=(planar_boundary_vertex[v1]||planar_boundary_vertex[v2])?0.35:0.04;
+        }
+        double silhouette_weight=1.0;
+        auto sit=silhouette_edges.find(key);
+        if(sit!=silhouette_edges.end()){
+            silhouette_weight+=0.20*(double)sit->second;
+            if(!planar_edge && sit->second>=4) silhouette_weight*=2.0;
+        }
+        return {p,qerror*curv_weight*len_weight*planar_weight*silhouette_weight};
     };
     priority_queue<Edge> pq;
     vector<unordered_set<int>> edge_set(nV);
