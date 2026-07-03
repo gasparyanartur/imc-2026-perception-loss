@@ -23,7 +23,7 @@ static constexpr double CParam_QemSolveDeterminantEps = 1e-12;
 static constexpr double CParam_Inf = 1e100;
 
 // ---- Overall time budget (seconds) ----
-static constexpr double hparam_TotalBudgetSeconds = 24.0;
+static constexpr double hparam_TotalBudgetSeconds = 21.0;
 
 // ---- Phase 0 (coplanar) time budget ----
 static constexpr double hparam_CoplanarBudgetSeconds = 0.4;
@@ -39,11 +39,11 @@ static constexpr int    hparam_OutputPrecisionSignificantDigits = 10;
 
 // ---- QEM target keep ratios (by input vertex count) ----
 static constexpr double hparam_KeepRatio_UpTo5k    = 0.00;
-static constexpr double hparam_KeepRatio_UpTo25k   = 0.347;
+static constexpr double hparam_KeepRatio_UpTo25k   = 0.36;
 static constexpr double hparam_KeepRatio_UpTo45k   = 0.175;
 static constexpr double hparam_KeepRatio_UpTo50k   = 0.098;
-static constexpr double hparam_KeepRatio_UpTo400k  = 0.025;
-static constexpr double hparam_KeepRatio_Huge      = 0.033;
+static constexpr double hparam_KeepRatio_UpTo400k  = 0.027;
+static constexpr double hparam_KeepRatio_Huge      = 0.0325;
 
 // ---- QEM cost cap ----
 static constexpr double hparam_QemCostCapCoeff = 0.0375;
