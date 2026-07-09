@@ -6,29 +6,35 @@ valid submission for the IMC 2026 challenge.
 
 ## Workflow
 
-1. **Understand the problem.** Read [`docs/report.md`](docs/report.md) first. It
-   defines the challenge, the evaluation pipeline (cameras, normal/depth maps,
-   foreground SSIM, Hausdorff, manifold validity), and the ranking objective
-   (`CompressionRate`). Refer back to it whenever you are unsure what the grader
-   rewards or rejects.
+* **Overview**: Read [`docs/problem-specification.md`](docs/problem-specification.md) to understand the challenge. When brainstorming solution ideas, add them to [`docs/solutions.md`](docs/solutions.md) with a brief description and initial status. Use [`docs/math-formalism.md`](docs/math-formalism.md) for mathematical reference. When you need a full description of the problem, see [`docs/problem_formulation-full.md`](docs/problem_formulation-full.md). 
 
-2. **Iterate on the solution.** Implement and improve the mesh simplification
-   logic in `solutions/baseline/baseline.py` (the `simplify()` function). Make incremental changes
-   that aim to remove more vertices while keeping the output a valid closed
-   2-manifold within the Hausdorff and SSIM constraints.
+* **Iterative Solutions:** You are iterating on a solution in a current solution family. Each solution family is a set of related ideas and code changes, e.g. solutions/lemon/v1.cpp. Each solution should also maintain a solution/(solution-family)/log.md file that records the changes made, the results, and a post-mortem for each iteration. The goal is to produce a valid submission that improves on the previous best `CompressionRate` while remaining a valid closed 2-manifold within the Hausdorff and SSIM constraints. When iterating a solution, use the skill [`skills/iterate.md`](skills/iterate.md) to guide your work.
 
-3. **Test every iteration.** After each change, evaluate the solution using the
+
+* **Test every iteration.** After each change, evaluate the solution using the
    [`skills/evaluate.md`](skills/evaluate.md) skill (which runs `./evaluate.sh`).
    Only accept a change if the skill reports a **valid** submission that
    **improves** on the previous best `CompressionRate`. If it is invalid, errors,
    or regresses, read the logged result in `outputs/`, diagnose, and iterate.
 
-4. **Bound the iteration.** Do not loop indefinitely. Make at most **5 attempts**
-   to produce a valid improvement over the previous best. If none of the 5
+* **Bound the iteration.** Do not loop indefinitely. Make at most **50 attempts**
+   to produce a valid improvement over the previous best. If none of the 50
    attempts improves the best `CompressionRate`, stop and write a short
    **post-mortem** for the user: your hypotheses for why the score did not
    improve (e.g. which validity gate blocks further reduction, where the
    simplification plateaus) and suggested next directions.
+
+* **Maintain a log of iterations.** Keep a record of the changes made, the results, and the
+   post-mortem in `log.md`. This will help you and others understand what was tried, what worked, and what did not.
+
+* **Maintain docs/solutions.md**. Update the solution ideas and their status in `docs/solutions.md` as you iterate. This will help track which approaches have been tried, what the results were, and what remains to be explored. If you think of a new idea while working, add a new bucket with a brief description and initial status.
+
+* **Mathematical Formalism**: When brainstorming solution ideas, add them to [`docs/solutions.md`](docs/solutions.md) with a brief description and initial status. Use [`docs/math-formalism.md`](docs/math-formalism.md) for mathematical reference.
+
+
+## Solution iteration
+
+
 
 ## Scope
 
