@@ -1,5 +1,5 @@
 // Baseline simplifier for "Perception-Aware Lossless Simplification of 3D
-// Meshes" -- a faithful C++ port of solutions/baseline/baseline.py.
+// Meshes" -- a deterministic C++ baseline implementation.
 //
 // It implements endpoint-only QEM edge collapse (report Solution 2). Each
 // undirected mesh edge is a collapse candidate, ranked by the Quadric Error
@@ -12,9 +12,8 @@
 //   * no degenerate (zero-area) face and no face-normal flip;
 //   * cluster-radius proxy for the symmetric Hausdorff bound.
 //
-// The C++ port exists because the Python solver exceeds the 21s grader limit on
-// large (million-vertex) meshes; the algorithm and numerical tolerances are
-// kept identical so the output matches the Python baseline.
+// The implementation is designed for the 21s grader limit on large
+// (million-vertex) meshes.
 //
 // To run:
 //   g++ -O2 baseline.cpp -o baseline

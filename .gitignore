@@ -1,5 +1,7 @@
 tmp/
 outputs/
+build/
+data/submissions.csv
 
 # Large generated stress meshes (regenerate with datasets/prepare_stress.py)
 data/stress/

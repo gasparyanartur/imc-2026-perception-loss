@@ -85,9 +85,10 @@ int main(int argc, char**argv){
         for(int k=0;k<3;++k) if(f[k]<0||f[k]>=(int)A.verts.size()) bad_idx++;
     }
     
-    // Compute bounds for B
-    Vec3 mn=B.verts[0], mx=B.verts[0];
-    for(auto&p: B.verts){mn.x=min(mn.x,p.x);mn.y=min(mn.y,p.y);mn.z=min(mn.z,p.z);mx.x=max(mx.x,p.x);mx.y=max(mx.y,p.y);mx.z=max(mx.z,p.z);}
+    // The challenge bound is defined from the original input mesh, not the
+    // candidate's potentially shrunken bounding box.
+    Vec3 mn=A.verts[0], mx=A.verts[0];
+    for(auto&p: A.verts){mn.x=min(mn.x,p.x);mn.y=min(mn.y,p.y);mn.z=min(mn.z,p.z);mx.x=max(mx.x,p.x);mx.y=max(mx.y,p.y);mx.z=max(mx.z,p.z);}
     double diag=sqrt(dot(mx-mn,mx-mn));
     
     // One-way distances (sampled)

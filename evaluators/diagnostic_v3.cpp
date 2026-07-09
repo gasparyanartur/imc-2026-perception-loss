@@ -180,6 +180,7 @@ int main(int argc, char**argv){
     
     vector<unsigned char> na, da, nb, db;
     double ssim_n=0, ssim_d=0;
+    double view_n[6] = {}, view_d[6] = {};
     vector<unsigned char> oR(IMG*IMG), oG(IMG*IMG), oB(IMG*IMG);
     vector<unsigned char> sR(IMG*IMG), sG(IMG*IMG), sB(IMG*IMG);
     for(int v=0;v<6;++v){
@@ -189,10 +190,13 @@ int main(int argc, char**argv){
             oR[i]=na[i*3]; oG[i]=na[i*3+1]; oB[i]=na[i*3+2];
             sR[i]=nb[i*3]; sG[i]=nb[i*3+1]; sB[i]=nb[i*3+2];
         }
-        ssim_n += ssim_ch(oR, sR, 127, IMG);
-        ssim_n += ssim_ch(oG, sG, 127, IMG);
-        ssim_n += ssim_ch(oB, sB, 127, IMG);
-        ssim_d += ssim_ch(da, db, 255, IMG);
+        double nr = ssim_ch(oR, sR, 127, IMG);
+        double ng = ssim_ch(oG, sG, 127, IMG);
+        double nb_score = ssim_ch(oB, sB, 127, IMG);
+        view_n[v] = (nr + ng + nb_score) / 3.0;
+        view_d[v] = ssim_ch(da, db, 255, IMG);
+        ssim_n += nr + ng + nb_score;
+        ssim_d += view_d[v];
     }
     ssim_n/=18.0; ssim_d/=6.0;
     double final_ssim=(ssim_n+ssim_d)*0.5;
@@ -202,5 +206,8 @@ int main(int argc, char**argv){
     printf("FinalSSIM=%.4f (SS=%d)\n", final_ssim, SS);
     printf("NormalSSIM=%.4f\n", ssim_n);
     printf("DepthSSIM=%.4f\n", ssim_d);
+    for (int v=0; v<6; ++v)
+        printf("View%d_NormalSSIM=%.4f View%d_DepthSSIM=%.4f View%d_CombinedSSIM=%.4f\n",
+               v, view_n[v], v, view_d[v], v, 0.5*(view_n[v]+view_d[v]));
     return 0;
 }

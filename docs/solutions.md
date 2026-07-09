@@ -21,8 +21,7 @@ For each bucket, form hypotheses about what will work and what will not. When yo
 **Status:** Primary candidate.
 
 **Notes:**
-- 2026-07-09: Identified as the most promising starting point. Standard QEM is well-understood and can be adapted to the judge's flat-normal and depth maps.
-- TODO: Implement basic QEM collapse in `solutions/baseline/baseline.py`.
+- 2026-07-09: Identified as the most promising starting point. Standard QEM is well-understood and can be adapted to the judge's flat-normal and depth maps.- TODO: Implement basic QEM collapse in `solutions/baseline/baseline.py`.
 - TODO: Add validity guards (link condition, positive area, no duplicate faces, normal-flip check).
 - TODO: Add perception terms (normal penalty, silhouette penalty, dihedral penalty).
 
