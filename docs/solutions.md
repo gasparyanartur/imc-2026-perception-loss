@@ -187,3 +187,30 @@ When implementing Bucket 1, these values are a reasonable initial guess. Update 
 | $w_S$ (silhouette) | 8.0 | Six-view contour preservation. |
 | $w_L$ (length) | 0.01 | Mild edge-length regularizer. |
 | $w_{\mathrm{shape}}$ | 0.02 | Mild shape-quality regularizer. |
+
+---
+
+## Smoke-run ideas: banana family
+
+**Status:** In progress (2026-07-10).
+
+- **Adaptive small-mesh retention:** Raise the tiny-mesh keep ratio until all
+  perceptual gates pass, then spend the remaining reduction budget on
+  geometry-safe star collapses. Hypothesis: the lemon T1 target of zero
+  vertices is the dominant cause of SSIM failures on the ppsurf smoke suite.
+- **Tier-boundary calibration:** Tune T1 and T2 independently because the
+  local ppsurf inputs straddle the 5,000-vertex boundary. Hypothesis: a single
+  aggressive parameter set cannot preserve both sparse and dense meshes.
+- **Perceptual safety margin:** Compare progressively stricter Vega SSIM and
+  damage limits after establishing validity. Hypothesis: a small margin above
+  the 0.90 native gate may permit more reliable compression than geometric
+  guards alone.
+
+These ideas are being tested in the `solutions/banana` smoke-run family.
+
+- 2026-07-10 workflow smoke run: `v17.cpp` was locally valid on all 10 ppsurf
+  meshes at 26.061328% compression, below `v16.cpp`'s 30.447274%. Further
+  increases in T1/T2 retention are therefore not promising without official
+  evidence that the local evaluator underestimates perceptual risk. A
+  concurrent four-candidate synthetic evaluation instead exhausted the native
+  diagnostic timeout, so local candidate sweeps must be sequential.

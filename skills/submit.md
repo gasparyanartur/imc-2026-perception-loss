@@ -3,6 +3,9 @@
 Submission is an online side effect and requires an explicit user request or
 approval for the specific C++ artifact(s).
 
+Before submitting, ask the user for an optional family name (strongly
+recommended for later filtering) and confirm the exact source filename(s).
+
 ## One submission
 
 Upload one C++ source with:
@@ -11,7 +14,8 @@ Upload one C++ source with:
 python3 scripts/submit.py --family lemon solutions/lemon/v115.cpp
 ```
 
-Required input is the family and source file. Defaults are:
+The source file is required. The family name is optional but strongly
+recommended for filtering. Defaults are:
 
 - service: `https://imc2-cvmaxxing.arturspace.dev/submit`;
 - team secret: `cvmaxxing-95`;
@@ -24,7 +28,8 @@ printed to stdout.
 
 ## Batch submission and polling
 
-Upload an arbitrary number of immutable C++ sources and wait for all of them:
+After evaluating each candidate locally in sequence, upload a batch of **4–6**
+immutable C++ sources and wait for all of them:
 
 ```sh
 python3 scripts/submit_batch.py --family lemon \

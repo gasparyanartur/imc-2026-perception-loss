@@ -1,7 +1,8 @@
 # Skill: evaluate
 
-Use this skill to score a C++ candidate and confirm it is an improvement before
-accepting it.
+Use this skill for one local diagnostic run per candidate. Kattis evaluation is
+the ground truth for official score and acceptance; local results guide
+debugging and local-evaluator parity work.
 
 ## When to use
 

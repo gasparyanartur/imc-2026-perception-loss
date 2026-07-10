@@ -15,15 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_URL = "https://imc2-cvmaxxing.arturspace.dev/submit"
 DEFAULT_TEAM_SECRET = "cvmaxxing-95"
 DEFAULT_PROBLEM = "simplifygeometry"
-DEFAULT_USERNAME = "gasparynaartur"
+DEFAULT_USERNAME = "gasparyanartur"
 
 
 class SubmissionError(RuntimeError):
     """Raised when the submission service rejects or cannot receive a file."""
 
 
-def _multipart(fields: dict[str, str], file_field: str, filename: str,
-               content: bytes) -> tuple[bytes, str]:
+def _multipart(fields: dict[str, str]) -> tuple[bytes, str]:
     boundary = f"----imc-submit-{uuid.uuid4().hex}"
     chunks: list[bytes] = []
     for name, value in fields.items():
@@ -33,19 +32,11 @@ def _multipart(fields: dict[str, str], file_field: str, filename: str,
             value.encode(),
             b"\r\n",
         ])
-    chunks.extend([
-        f"--{boundary}\r\n".encode(),
-        (f'Content-Disposition: form-data; name="{file_field}"; '
-         f'filename="{filename}"\r\n').encode(),
-        b"Content-Type: text/plain\r\n\r\n",
-        content,
-        b"\r\n",
-        f"--{boundary}--\r\n".encode(),
-    ])
+    chunks.append(f"--{boundary}--\r\n".encode())
     return b"".join(chunks), f"multipart/form-data; boundary={boundary}"
 
 
-def submit_file(path: Path, *, teamsecret: str, problem: str, family: str,
+def submit_file(path: Path, *, teamsecret: str, problem: str, family: str | None,
                 username: str, url: str = DEFAULT_URL) -> dict:
     """Upload ``path`` and return the decoded service response."""
     path = path.expanduser().resolve()
@@ -55,19 +46,16 @@ def submit_file(path: Path, *, teamsecret: str, problem: str, family: str,
         raise SubmissionError(f"only C++ source files (*.cpp) are supported: {path}")
     if not teamsecret:
         raise SubmissionError("teamsecret must not be empty")
-    if not family:
-        raise SubmissionError("family must not be empty")
-
+    fields = {
+        "username": username,
+        "problem_id": problem,
+        "filename": path.name,
+        "code": path.read_text(encoding="utf-8"),
+    }
+    if family:
+        fields["family"] = family
     body, content_type = _multipart(
-        {
-            "username": username,
-            "problem_id": problem,
-            "filename": path.name,
-            "family": family,
-        },
-        "code",
-        path.name,
-        path.read_bytes(),
+        fields,
     )
     request = urllib.request.Request(
         url,
@@ -107,7 +95,8 @@ def main(argv: list[str] | None = None) -> int:
                                                DEFAULT_TEAM_SECRET))
     parser.add_argument("--problem", default=os.environ.get(
         "KATTIS_PROBLEM", DEFAULT_PROBLEM))
-    parser.add_argument("--family", required=True)
+    parser.add_argument("--family",
+                        help="optional family label, recommended for filtering")
     parser.add_argument("--username", default=os.environ.get(
         "KATTIS_USERNAME", DEFAULT_USERNAME))
     parser.add_argument("--url", default=os.environ.get("SUBMIT_URL", DEFAULT_URL),

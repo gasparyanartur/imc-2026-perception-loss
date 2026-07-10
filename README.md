@@ -57,7 +57,8 @@ Submit one or more C++ sources with:
 python3 scripts/submit.py --family lemon solutions/lemon/v115.cpp
 ```
 
-Upload any number of C++ sources, store their IDs, and wait for all results with:
+After evaluating each candidate locally in sequence, upload 4–6 C++ sources,
+store their IDs, and wait for all results with:
 
 ```sh
 python3 scripts/submit_batch.py --family lemon \

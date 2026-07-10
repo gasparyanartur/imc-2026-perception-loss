@@ -15,7 +15,13 @@ When the user has approved to iterate on a solution in a current solution family
 
 * **Maintain a log of iterations.** Keep a record of the changes made, the results, and the post-mortem in `solutions/(family)/log.md`. This will help you and others understand what was tried, what worked, and what did not.
 
-* **Test every iteration.** After each change, evaluate the solution using the [`skills/evaluate.md`](skills/evaluate.md) skill (which runs `./evaluate.sh`). Only accept a change if the skill reports a **valid** submission that **improves** on the previous best `CompressionRate`. If it is invalid, errors, or regresses, read the logged result in `outputs/`, diagnose, and iterate.
+* **Plan a batch.** Before iterating, state a hypothesis for increasing `CompressionRate`, then propose a batch of **4–6** distinct, meaningful code improvements to test against it (for example, parameter tuning or a new feature).
+
+* **Evaluate locally.** Evaluate every candidate in the planned batch **sequentially**, after its meaningful change, using the local evaluator diagnostically to verify that it works and inspect validity, SSIM, Hausdorff, and compression results. Use the diagnostics to explain score differences and refine the next hypothesis; do not treat local results as the ranking oracle.
+
+* **Submit for ground truth.** After every candidate in the batch has been locally evaluated, submit the immutable batch through the submission script. Kattis evaluation is the official source of acceptance and ranking score; local evaluation is a diagnostic approximation that helps explain and predict those results.
+
+* **Continuously improve the local evaluator.** Whenever Kattis and local behavior differ, investigate and improve the local evaluator to extract more information about the meshes and score changes. Record the parity change and the new diagnostic insight so future iterations use a more informative local signal.
 
 * **Bound the iteration.** Do not loop indefinitely. Make at most **50 attempts** to produce a valid improvement over the previous best. If none of the 50 attempts improves the best `CompressionRate`, stop and write a short **post-mortem** for the user: your hypotheses for why the score did not improve (e.g. which validity gate blocks further reduction, where the simplification plateaus) and suggested next directions.
 
@@ -25,6 +31,6 @@ When the user has approved to iterate on a solution in a current solution family
 
 * **Efficient runs.** Because the score is given independently for each test-case, and our code has independent parameters for each test (tiers), you can change parameters in all tiers simultaneously in each run. This means that we can extract maximum information from each run.
 
-* **Parallel runs.** You can run multiple iterations in parallel to speed up the search for an improved solution. Run tests in batches of 3-5, wait for the results, and then analyze the results to determine the next set of parameters to try. See [`skills/submit.md`](skills/submit.md) for how to submit a batch of solutions to Kattis and receive scores for each.
+* **Batch submissions.** Submit the **4–6** immutable candidates from the sequentially evaluated batch together. Wait for the whole batch's results, then use local diagnostics to explain score differences and determine the next changes. See [`skills/submit.md`](submit.md) for batch submission.
 
 * **Ensure Improvments.** Do not make tiny trivial changes that do not meaningfully affect the score. Each iteration should be a meaningful change that has the potential to improve the `CompressionRate`. Look at the debug information from the local evaluator to infer deeper insights about the solution. If the score is the exact same multiple times in a row, that is a MASSIVE RED FLAG that you are not making meaningful changes.
