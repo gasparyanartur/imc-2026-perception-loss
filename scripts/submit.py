@@ -22,8 +22,7 @@ class SubmissionError(RuntimeError):
     """Raised when the submission service rejects or cannot receive a file."""
 
 
-def _multipart(fields: dict[str, str], file_field: str, filename: str,
-               content: bytes) -> tuple[bytes, str]:
+def _multipart(fields: dict[str, str]) -> tuple[bytes, str]:
     boundary = f"----imc-submit-{uuid.uuid4().hex}"
     chunks: list[bytes] = []
     for name, value in fields.items():
@@ -33,15 +32,7 @@ def _multipart(fields: dict[str, str], file_field: str, filename: str,
             value.encode(),
             b"\r\n",
         ])
-    chunks.extend([
-        f"--{boundary}\r\n".encode(),
-        (f'Content-Disposition: form-data; name="{file_field}"; '
-         f'filename="{filename}"\r\n').encode(),
-        b"Content-Type: text/plain\r\n\r\n",
-        content,
-        b"\r\n",
-        f"--{boundary}--\r\n".encode(),
-    ])
+    chunks.append(f"--{boundary}--\r\n".encode())
     return b"".join(chunks), f"multipart/form-data; boundary={boundary}"
 
 
@@ -59,14 +50,12 @@ def submit_file(path: Path, *, teamsecret: str, problem: str, family: str | None
         "username": username,
         "problem_id": problem,
         "filename": path.name,
+        "code": path.read_text(encoding="utf-8"),
     }
     if family:
         fields["family"] = family
     body, content_type = _multipart(
         fields,
-        "code",
-        path.name,
-        path.read_bytes(),
     )
     request = urllib.request.Request(
         url,
