@@ -260,3 +260,21 @@ structural perceptual improvements where target tuning has no slack.
   6/6 on the proxy and restores official T2/T5, but scores only 41.010414 with
   T3/T4/T6 invalid. Status: direction-aware curvature rank rejected as a
   general solution; persistent feature quadrics promoted to in progress.
+
+---
+
+## Pineapple family: Vega-gated structural improvement
+
+**Status:** Started 2026-07-10. Builds on Tangerine's negative evidence.
+
+**Idea:** Keep Nebula's screen-core skeleton, but reject perceptually
+expensive QEM collapses during the screen-core loop using a *local* Vega
+SSIM gate, modulate the per-edge QEM cost cap by Vega-safety, and add
+persistent axial-silhouette/crease quadrics to bias the screen-core
+selection toward preserving contour and crease energy.
+
+- Ranked directions: Vega-gated QEM acceptance (9.2/10), Vega-aware QEM
+  cost cap modulation (8.8/10), persistent axial silhouette/crease
+  quadrics in the screen core (8.3/10), silhouette-weighted placement
+  (7.7/10), Vega-gated memless rebuild (7.0/10).
+- v001 is the immutable Nebula v14 control; expected Kattis = 90.187632.

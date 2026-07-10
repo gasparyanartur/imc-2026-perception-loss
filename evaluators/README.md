@@ -1,18 +1,19 @@
 # Native C++ evaluator suite
 
-The sources in this directory implement the complete local acceptance path.
-They are compiled into `build/evaluators/`, which is ignored by Git.
+A single binary (`evaluator.cpp`) reads both meshes once and reports every
+metric the orchestrator needs:
 
-- `diagnostic_v3.cpp`: native 1024-pixel normal/depth SSIM diagnostic;
-- `diag_small.cpp`: 256-pixel diagnostic for fast experiments;
-- `hausdorff_validator.cpp`: sampled bidirectional surface-distance check;
-- `mesh_validity.cpp`: topology, indexing, degeneracy, and vertex-count gate.
+- topology (manifold, orientation, repeats, euler/genus, boundary loops)
+- geometric reduction stats and per-mesh surface area
+- bidirectional Hausdorff distance (uniform-grid accelerated)
+- six axial-view normal/depth SSIM (rendered in parallel)
+- per-view silhouette IoU and foreground-pixel counts
 
-Build the suite with:
+Build with:
 
 ```sh
 scripts/build-evaluators.sh
 ```
 
-The orchestration layer accepts only `.cpp` candidate sources and requires the
-native validity, perceptual, and surface-distance components for acceptance.
+The binary prints structured `KEY=VALUE` lines on stdout and never reports
+PASS/FAIL — the Python orchestrator decides based on its own thresholds.

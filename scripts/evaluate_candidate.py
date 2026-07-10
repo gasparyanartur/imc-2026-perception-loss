@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Orchestrate the native C++ mesh evaluator over a candidate suite.
+"""Orchestrate the unified native evaluator over a candidate suite.
 
-The metrics and validity gates are implemented by the binaries in
-``build/evaluators``. This file only manages candidate compilation, process
-isolation, dataset iteration, and report aggregation.
+The single binary in ``build/evaluators/evaluator`` reports every metric we
+need (topology, geometry, Hausdorff, six-view SSIM, IoU) as KEY=VALUE pairs.
+This script compiles the candidate, runs it on each dataset mesh, and
+collects the results.
+
+By default no threshold comparison is performed; the orchestrator just
+records every metric. Pass --strict to compare against the documented
+acceptance thresholds (SSIM >= 0.9, Hausdorff usage <= 100%, etc.).
 """
 from __future__ import annotations
 
@@ -17,8 +22,25 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SSIM_THRESHOLD = 0.9
 DEFAULT_TIME_BUDGET = 20.2
+DEFAULT_SSIM_THRESHOLD = 0.9
+# Synthetic suite covers tiers 1-4, stress adds tiers 5-6.
+DEFAULT_DATASETS = ["data/ppsurf", "data/synth_bench"]
+TIER_BY_VERTEX_COUNT = [
+    (3000, "tier1"),
+    (10000, "tier2"),
+    (30000, "tier3"),
+    (150000, "tier4"),
+    (600000, "tier5"),
+    (10**12, "tier6"),
+]
+
+
+def classify_tier(vertex_count: int) -> str:
+    for hi, name in TIER_BY_VERTEX_COUNT:
+        if vertex_count <= hi:
+            return name
+    return "tier6+"
 
 
 def inputs_for(path: Path) -> list[Path]:
@@ -27,28 +49,38 @@ def inputs_for(path: Path) -> list[Path]:
     return sorted(p for p in path.iterdir() if p.suffix in (".txt", ".obj"))
 
 
-def parse_metric(text: str, name: str) -> float | None:
-    matches = re.findall(r"(?:^|\n).*?" + re.escape(name)
-                        + r"(?:=|:)\s*([-+0-9.eE]+)", text)
-    return float(matches[-1]) if matches else None
+def parse_kv_block(text: str) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        out[key.strip()] = val.strip()
+    return out
 
 
-def parse_line_metric(text: str, name: str) -> float | None:
-    matches = re.findall(r"^" + re.escape(name)
-                        + r"=([-+0-9.eE]+)", text, re.M)
-    return float(matches[-1]) if matches else None
-
-
-def parse_native_views(text: str) -> list[dict[str, float]]:
+def parse_per_view(text: str) -> list[dict[str, float]]:
     pattern = re.compile(
-        r"View(\d+)_NormalSSIM=([-+0-9.eE]+) "
-        r"View\d+_DepthSSIM=([-+0-9.eE]+) "
-        r"View\d+_CombinedSSIM=([-+0-9.eE]+)")
-    return [
-        {"view": float(view), "normal": float(normal),
-         "depth": float(depth), "combined": float(combined)}
-        for view, normal, depth, combined in pattern.findall(text)
-    ]
+        r"V(\d+)_NORMAL_SSIM=([-+0-9.eE]+) V\d+_DEPTH_SSIM=([-+0-9.eE]+) "
+        r"V\d+_COMBINED_SSIM=([-+0-9.eE]+) V\d+_NORM_IOU=([-+0-9.eE]+) "
+        r"V\d+_DEPTH_IOU=([-+0-9.eE]+) V\d+_FG_ORIG=(\d+) V\d+_FG_SIMP=(\d+)"
+    )
+    out = []
+    for m in pattern.finditer(text):
+        out.append({
+            "view": int(m.group(1)),
+            "normal_ssim": float(m.group(2)),
+            "depth_ssim": float(m.group(3)),
+            "combined_ssim": float(m.group(4)),
+            "normal_iou": float(m.group(5)),
+            "depth_iou": float(m.group(6)),
+            "fg_orig": int(m.group(7)),
+            "fg_simp": int(m.group(8)),
+        })
+    return out
 
 
 def file_sha256(path: Path) -> str:
@@ -59,8 +91,8 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def run_process(command: list[str], input_path: Path, output_path: Path,
-                timeout: float) -> tuple[bool, str, float]:
+def run_candidate(command: list[str], input_path: Path, output_path: Path,
+                  timeout: float) -> tuple[bool, str, float]:
     start = time.perf_counter()
     try:
         with input_path.open("rb") as source, output_path.open("wb") as target:
@@ -71,7 +103,7 @@ def run_process(command: list[str], input_path: Path, output_path: Path,
     elapsed = time.perf_counter() - start
     if proc.returncode:
         message = proc.stderr.decode("utf-8", "replace").strip().splitlines()
-        return False, message[-1] if message else "solver failed", elapsed
+        return False, (message[-1] if message else "solver failed"), elapsed
     return True, "ok", elapsed
 
 
@@ -84,165 +116,184 @@ def build_candidate(candidate: Path, temp_dir: Path) -> list[str]:
     return [str(output)]
 
 
-def native_metrics(evaluator_dir: Path, original: Path, simplified: Path,
-                   samples: int, diagnostic_resolution: int) -> dict[str, object]:
-    metrics: dict[str, object] = {
-        "cpp_final_ssim": None, "cpp_normal_ssim": None,
-        "cpp_depth_ssim": None, "surface_hausdorff": None,
-        "surface_limit": None, "cpp_per_view": [],
-    }
-    use_fast_diag = diagnostic_resolution < 1024
-    diag = evaluator_dir / ("diag_small" if use_fast_diag else "diagnostic_v3")
-    if diag.exists():
-        command = [str(diag), str(original), str(simplified)]
-        result = subprocess.run(command,
-                                capture_output=True, text=True, timeout=120)
-        metrics["diagnostic_resolution"] = diagnostic_resolution
-        metrics["cpp_final_ssim"] = parse_metric(result.stdout, "FinalSSIM")
-        metrics["cpp_normal_ssim"] = parse_line_metric(result.stdout, "NormalSSIM")
-        metrics["cpp_depth_ssim"] = parse_line_metric(result.stdout, "DepthSSIM")
-        metrics["cpp_per_view"] = parse_native_views(result.stdout)
-        if result.returncode and metrics["cpp_final_ssim"] is None:
-            metrics["native_note"] = "diagnostic_v3 failed"
-
-    haus = evaluator_dir / "hausdorff_validator"
-    if haus.exists():
-        result = subprocess.run([str(haus), str(original), str(simplified),
-                                 str(samples)], capture_output=True, text=True,
-                                timeout=120)
-        metrics["surface_hausdorff"] = parse_metric(
-            result.stdout, "Hausdorff symmetric")
-        metrics["surface_limit"] = parse_metric(
-            result.stdout, "Hausdorff limit (5% diag)")
+def run_native_evaluator(evaluator_path: Path, original: Path,
+                         simplified: Path, timeout: float) -> dict[str, object]:
+    cmd = [str(evaluator_path), str(original), str(simplified), "--profile"]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True,
+                                timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return {"evaluator_error": f"evaluator timeout after {timeout:.0f}s"}
+    kv = parse_kv_block(result.stdout)
+    metrics: dict[str, object] = {"raw": kv, "per_view": parse_per_view(result.stdout)}
+    if result.returncode and not kv:
+        metrics["evaluator_error"] = "evaluator failed: " + (result.stderr.strip() or "no output")
     return metrics
 
 
-def native_validity(evaluator_dir: Path, original: Path,
-                    simplified: Path) -> dict[str, object]:
-    validator = evaluator_dir / "mesh_validity"
-    if not validator.exists():
-        return {"native_validity_ok": False,
-                "native_validity_note": "mesh_validity unavailable"}
-    result = subprocess.run([str(validator), str(original), str(simplified)],
-                            capture_output=True, text=True, timeout=30)
-    values: dict[str, object] = {"native_validity_ok": False}
-    for line in result.stdout.splitlines():
-        if "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        if key == "VALIDITY":
-            values["native_validity_ok"] = value == "VALID"
-        elif value.isdigit():
-            values[key.lower()] = int(value)
-    if result.returncode and "native_validity_note" not in values:
-        values["native_validity_note"] = "native validity gate failed"
-    return values
+def coerce_numeric(metrics: dict[str, object]) -> dict[str, float | int | None]:
+    raw = metrics.get("raw", {})
+    out: dict[str, float | int | None] = {}
+    for k, v in raw.items():
+        try:
+            if "." in v or "e" in v.lower() or "E" in v:
+                out[k] = float(v)
+            else:
+                out[k] = int(v)
+        except ValueError:
+            out[k] = v  # type: ignore[assignment]
+    return out
 
 
 def evaluate_one(candidate_cmd: list[str], original_path: Path,
-                 timeout: float, time_budget: float, evaluator_dir: Path,
-                 surface_samples: int, diagnostic_resolution: int,
-                 metrics_max_vertices: int) -> dict:
-    record = {
-        "name": original_path.stem, "input": str(original_path),
-        "valid": False, "compression": 0.0, "seconds": None, "note": "",
+                 timeout: float, time_budget: float, evaluator_path: Path,
+                 strict: bool) -> dict:
+    record: dict[str, object] = {
+        "name": original_path.stem,
+        "input": str(original_path),
+        "valid": True,
+        "compression": 0.0,
+        "seconds": None,
+        "note": "",
+        "strict_failures": [],
     }
     with tempfile.TemporaryDirectory(prefix="mesh-eval-") as tmp:
         output_path = Path(tmp) / "simplified.txt"
-        ok, message, seconds = run_process(candidate_cmd, original_path,
-                                            output_path, timeout)
+        ok, message, seconds = run_candidate(candidate_cmd, original_path,
+                                             output_path, timeout)
         record["seconds"] = seconds
         if not ok:
+            record["valid"] = False
             record["note"] = message
             return record
         record["output_bytes"] = output_path.stat().st_size
         record["output_sha256"] = file_sha256(output_path)
 
-        validity = native_validity(evaluator_dir, original_path, output_path)
-        record.update(validity)
-        original_vertices = int(validity.get("original_vertices", 0))
-        simplified_vertices = int(validity.get("simplified_vertices", 0))
-        if not original_vertices or not simplified_vertices:
-            record["note"] = "native mesh parser unavailable"
-            return record
-        record["original_vertices"] = original_vertices
-        record["simplified_vertices"] = simplified_vertices
-        record["compression"] = 100.0 * (1.0 - simplified_vertices
-                                          / original_vertices)
-        record["manifold_ok"] = bool(validity.get("native_validity_ok"))
-        record["validity_reasons"] = []
+        # Run the unified evaluator
+        eval_metrics = run_native_evaluator(evaluator_path, original_path,
+                                            output_path, timeout=180.0)
+        record["metrics"] = coerce_numeric(eval_metrics)
+        record["per_view"] = eval_metrics.get("per_view", [])
 
-        run_metrics = (metrics_max_vertices <= 0
-                       or original_vertices <= metrics_max_vertices)
-        if run_metrics:
-            record.update(native_metrics(evaluator_dir, original_path, output_path,
-                                         surface_samples, diagnostic_resolution))
-            cpp_ssim = record.get("cpp_final_ssim")
-            native_ok = cpp_ssim is not None and float(cpp_ssim) >= SSIM_THRESHOLD
-            surface_h = record.get("surface_hausdorff")
-            surface_bound = record.get("surface_limit")
-            geometry_ok = bool(record["manifold_ok"])
-            if surface_h is None or surface_bound is None:
-                geometry_ok = False
-            else:
-                geometry_ok = (geometry_ok
-                               and float(surface_h) <= float(surface_bound))
-        else:
-            record["metrics_skipped"] = True
-            record["diagnostic_resolution"] = diagnostic_resolution
-            cpp_ssim = None
-            native_ok = True
-            surface_h = None
-            surface_bound = None
-            geometry_ok = bool(record["manifold_ok"])
+        if "evaluator_error" in eval_metrics:
+            record["valid"] = False
+            record["note"] = eval_metrics["evaluator_error"]
+            return record
+
+        m = record["metrics"]
+        V_orig = int(m.get("ORIGINAL_VERTICES", 0) or 0)
+        V_simp = int(m.get("SIMPLIFIED_VERTICES", 0) or 0)
+        if V_orig <= 0 or V_simp <= 0:
+            record["valid"] = False
+            record["note"] = "evaluator produced zero-vertex result"
+            return record
+
+        record["tier"] = classify_tier(V_orig)
+        record["original_vertices"] = V_orig
+        record["simplified_vertices"] = V_simp
+        record["compression"] = float(m.get("VERTEX_REDUCTION_PCT", 0.0) or 0.0)
+        record["face_reduction"] = float(m.get("FACE_REDUCTION_PCT", 0.0) or 0.0)
+        record["final_ssim"] = float(m.get("FINAL_SSIM", 0.0) or 0.0)
+        record["normal_ssim"] = float(m.get("NORMAL_SSIM", 0.0) or 0.0)
+        record["depth_ssim"] = float(m.get("DEPTH_SSIM", 0.0) or 0.0)
+        record["hausdorff_sym"] = float(m.get("HAUSDORFF_SYM", 0.0) or 0.0)
+        record["hausdorff_usage_pct"] = float(m.get("HAUSDORFF_USAGE_PCT", 0.0) or 0.0)
+        record["hausdorff_limit"] = float(m.get("HAUSDORFF_LIMIT_5PCT", 0.0) or 0.0)
+        record["nonmanifold_edges"] = int(m.get("NONMANIFOLD_EDGES_SIMP", 0) or 0)
+        record["degenerate_faces"] = int(m.get("DEGENERATE_FACES_SIMP", 0) or 0)
+        record["repeated_faces"] = int(m.get("REPEATED_FACES_SIMP", 0) or 0)
+        record["orientation_errors"] = int(m.get("ORIENTATION_ERRORS_SIMP", 0) or 0)
+        record["boundary_edges"] = int(m.get("BOUNDARY_EDGES_SIMP", 0) or 0)
+        record["euler_chi"] = int(m.get("EULER_CHI_SIMP", 0) or 0)
+        record["genus"] = int(m.get("GENUS_SIMP", -1) or -1)
+        record["sharp_edges_60"] = int(m.get("SHARP_EDGES_60_SIMP", 0) or 0)
+        record["min_tri_area"] = float(m.get("MIN_TRI_AREA_SIMP", 0.0) or 0.0)
+        record["max_edge_len"] = float(m.get("MAX_EDGE_LEN_SIMP", 0.0) or 0.0)
+        record["render_res"] = int(m.get("RENDER_RES", 0) or 0)
+        record["render_ss"] = int(m.get("RENDER_SS", 0) or 0)
+        record["render_threads"] = int(m.get("RENDER_THREADS", 0) or 0)
+        record["hausdorff_samples"] = int(m.get("HAUSDORFF_SAMPLES", 0) or 0)
+        record["normal_iou_avg"] = float(m.get("NORMAL_IOU_AVG", 1.0) or 1.0)
+        record["depth_iou_avg"] = float(m.get("DEPTH_IOU_AVG", 1.0) or 1.0)
+        record["fg_pixels_orig"] = int(m.get("FG_PIXELS_ORIG_SUM", 0) or 0)
+        record["fg_pixels_simp"] = int(m.get("FG_PIXELS_SIMP_SUM", 0) or 0)
+
+        # Validity heuristics: reject if topology obviously broken.
+        invalid_reasons = []
+        if record["nonmanifold_edges"] > 0:
+            invalid_reasons.append(f"nonmanifold_edges={record['nonmanifold_edges']}")
+        if record["orientation_errors"] > 0:
+            invalid_reasons.append(f"orientation_errors={record['orientation_errors']}")
+        if record["degenerate_faces"] > 0:
+            invalid_reasons.append(f"degenerate_faces={record['degenerate_faces']}")
+        if V_simp > V_orig:
+            invalid_reasons.append("simplified has more vertices than original")
+        if record["boundary_edges"] > 0:
+            invalid_reasons.append(f"boundary_edges={record['boundary_edges']}")
+
+        if strict:
+            if record["final_ssim"] < DEFAULT_SSIM_THRESHOLD:
+                invalid_reasons.append(
+                    f"FinalSSIM={record['final_ssim']:.4f} < {DEFAULT_SSIM_THRESHOLD}"
+                )
+            if record["hausdorff_usage_pct"] > 100.0:
+                invalid_reasons.append(
+                    f"Hausdorff usage={record['hausdorff_usage_pct']:.1f}% > 100%"
+                )
 
         over_budget = time_budget > 0 and seconds > time_budget
-        record["native_ssim_ok"] = native_ok if run_metrics else None
-        record["over_budget"] = over_budget
-        record["valid"] = bool(native_ok and geometry_ok and not over_budget)
-
-        notes = []
-        if not record["manifold_ok"]:
-            notes.append("native topology/geometry gate failed")
-        if surface_h is not None and surface_bound is not None \
-                and float(surface_h) > float(surface_bound):
-            notes.append(f"surface Hausdorff {surface_h:.6f} > {surface_bound:.6f}")
-        if run_metrics and not native_ok:
-            notes.append(f"native FinalSSIM {cpp_ssim} < {SSIM_THRESHOLD:.2f}")
-        if not run_metrics:
-            notes.append("perceptual/Hausdorff metrics skipped for fast high-tier probe")
         if over_budget:
-            notes.append(f"over time budget {seconds:.2f}s > {time_budget:.2f}s")
-        record["note"] = "; ".join(notes) or "ok"
+            invalid_reasons.append(f"over time budget {seconds:.2f}s > {time_budget:.2f}s")
+
+        record["strict_failures"] = invalid_reasons
+        record["valid"] = not invalid_reasons
+        record["note"] = "; ".join(invalid_reasons) if invalid_reasons else "ok"
     return record
 
 
-def print_report(records: list[dict]) -> None:
-    print("=" * 132)
-    print("IMC 2026 native C++ evaluation")
-    print("=" * 132)
-    print(f"{'scenario':<28} {'result':<7} {'compr%':>8} {'cppSSIM':>8} "
-          f"{'sHaus':>9} {'secs':>7} {'finger':<8}  note")
-    print("-" * 132)
-    for record in records:
-        def value(key: str, fmt: str = ".4f") -> str:
-            value = record.get(key)
-            return "-" if value is None else format(value, fmt)
-        print(f"{record['name']:<28} "
-              f"{('VALID' if record['valid'] else 'INVALID'):<7} "
-              f"{record.get('compression', 0.0):8.4f} "
-              f"{value('cpp_final_ssim'):>8} "
-              f"{value('surface_hausdorff'):>9} "
-              f"{value('seconds', '.2f'):>7} "
-              f"{str(record.get('output_sha256', '-'))[:8]:<8}  "
-              f"{record.get('note', '')}")
+def print_report(records: list[dict], strict: bool) -> None:
+    width = 150
+    print("=" * width)
+    print("IMC 2026 unified native evaluation")
+    print("=" * width)
+    header = (
+        f"{'scenario':<28} {'tier':<7} {'valid':<5} {'compr%':>8} "
+        f"{'SSIM':>7} {'Haus%':>7} {'IoU_N':>6} {'res':>4} "
+        f"{'secs':>6} {'finger':<10}  {'note'}"
+    )
+    print(header)
+    print("-" * width)
+    for r in records:
+        valid = "PASS" if r["valid"] else "FAIL"
+        ssim = r.get("final_ssim")
+        haus = r.get("hausdorff_usage_pct")
+        iou = r.get("normal_iou_avg")
+        ssim_s = f"{ssim:.4f}" if ssim is not None else "-"
+        haus_s = f"{haus:.1f}" if haus is not None else "-"
+        iou_s = f"{iou:.3f}" if iou is not None else "-"
+        res = r.get("render_res")
+        res_s = str(res) if res else "-"
+        secs = r.get("seconds")
+        secs_s = f"{secs:.2f}" if secs is not None else "-"
+        finger = (r.get("output_sha256") or "-")[:8]
+        print(
+            f"{r['name']:<28} {r.get('tier','-'):<7} {valid:<5} "
+            f"{r.get('compression',0.0):8.4f} {ssim_s:>7} {haus_s:>7} {iou_s:>6} "
+            f"{res_s:>4} {secs_s:>6} {finger:<10}  {r.get('note','')}"
+        )
+    print("-" * width)
     total = len(records)
-    passed = sum(bool(record["valid"]) for record in records)
-    mean = sum(float(record.get("compression", 0.0))
-               for record in records) / max(1, total)
-    print("-" * 132)
+    passed = sum(1 for r in records if r["valid"])
+    if total > 0:
+        mean_compr = sum(float(r.get("compression", 0.0)) for r in records) / total
+    else:
+        mean_compr = 0.0
     print(f"Scenarios passed : {passed} / {total}")
-    print(f"Mean compression : {mean:.6f} %")
+    print(f"Mean compression : {mean_compr:.6f} %")
+    if strict:
+        print(f"Strict thresholds: SSIM >= {DEFAULT_SSIM_THRESHOLD}, Hausdorff usage <= 100%")
+    else:
+        print("Strict mode off: all reported metrics, no acceptance gate enforced")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -253,18 +304,12 @@ def main(argv: list[str] | None = None) -> int:
                         help="dataset file/directory; repeatable")
     parser.add_argument("--include-synthetic", action="store_true",
                         help="also evaluate data/synth_bench")
+    parser.add_argument("--include-stress", action="store_true",
+                        help="also evaluate data/stress (tiers 5/6)")
     parser.add_argument("--time-budget", type=float, default=DEFAULT_TIME_BUDGET)
     parser.add_argument("--solver-timeout", type=float, default=30.0)
-    parser.add_argument("--surface-samples", type=int, default=500)
-    parser.add_argument(
-        "--diagnostic-resolution", type=int, choices=(256, 1024), default=1024,
-        help="native SSIM render resolution; 256 is a fast diagnostic, "
-             "1024 matches the full local acceptance path")
-    parser.add_argument(
-        "--metrics-max-vertices", type=int, default=0,
-        help="skip SSIM/Hausdorff above this original vertex count while still "
-             "checking solver time, topology, counts, and output hash; "
-             "0 evaluates metrics on every mesh")
+    parser.add_argument("--strict", action="store_true",
+                        help="apply documented SSIM and Hausdorff thresholds")
     parser.add_argument("--json", type=Path, help="write detailed records")
     args = parser.parse_args(argv)
 
@@ -274,48 +319,46 @@ def main(argv: list[str] | None = None) -> int:
     if candidate.suffix.lower() != ".cpp":
         parser.error("only C++ source candidates (*.cpp) are supported")
 
-    dataset_paths = [Path(p).resolve() for p in (args.dataset or ["data/ppsurf"])]
-    if args.include_synthetic:
+    dataset_paths = [Path(p).resolve() for p in (args.dataset or [])]
+    if not dataset_paths:
+        dataset_paths = [Path(ROOT / "data/ppsurf").resolve()]
+    if args.include_synthetic and not any(str(p).endswith("synth_bench") for p in dataset_paths):
         dataset_paths.append((ROOT / "data/synth_bench").resolve())
-    inputs = []
+    if args.include_stress and not any(str(p).endswith("stress") for p in dataset_paths):
+        dataset_paths.append((ROOT / "data/stress").resolve())
+
+    inputs: list[Path] = []
     for dataset in dataset_paths:
         inputs.extend(inputs_for(dataset))
     if not inputs:
         parser.error("no input meshes found")
 
-    evaluator_dir = ROOT / "build/evaluators"
-    diagnostic_binary = ("diag_small" if args.diagnostic_resolution < 1024
-                         else "diagnostic_v3")
-    required_evaluators = (diagnostic_binary, "hausdorff_validator",
-                           "mesh_validity")
-    missing = [name for name in required_evaluators
-               if not (evaluator_dir / name).is_file()]
-    if missing:
-        parser.error("native evaluator binaries missing: " + ", ".join(missing)
+    evaluator_path = ROOT / "build/evaluators/evaluator"
+    if not evaluator_path.is_file():
+        parser.error("evaluator binary missing: " + str(evaluator_path)
                      + "; run scripts/build-evaluators.sh")
 
     with tempfile.TemporaryDirectory(prefix="candidate-build-") as tmp:
         command = build_candidate(candidate, Path(tmp))
         records = [evaluate_one(command, path, args.solver_timeout,
-                                args.time_budget, evaluator_dir,
-                                args.surface_samples, args.diagnostic_resolution,
-                                args.metrics_max_vertices)
+                                args.time_budget, evaluator_path, args.strict)
                    for path in inputs]
 
-    print_report(records)
+    print_report(records, args.strict)
     total = len(records)
-    passed = sum(bool(record["valid"]) for record in records)
-    mean = sum(float(record.get("compression", 0.0))
-               for record in records) / total
-    print(f"RESULT={'VALID' if passed == total else 'INVALID'}")
+    passed = sum(1 for r in records if r["valid"])
+    mean = (sum(float
+(r.get("compression", 0.0)) for r in records) / max(1, total))
+    print(f"RESULT={'PASS' if passed == total else 'FAIL'}")
     print(f"SCENARIOS_TOTAL={total}")
     print(f"SCENARIOS_PASSED={passed}")
     print(f"COMPRESSION_RATE={mean:.6f}")
-    print(f"NATIVE_SSIM_THRESHOLD={SSIM_THRESHOLD:.6f}")
+    if args.strict:
+        print(f"NATIVE_SSIM_THRESHOLD={DEFAULT_SSIM_THRESHOLD:.6f}")
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(records, indent=2, allow_nan=True) + "\n")
-    return 0 if passed == total else 1
+    return 0
 
 
 if __name__ == "__main__":

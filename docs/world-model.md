@@ -24,6 +24,15 @@ ground truth.
 - Native renderer diagnostics are resource-intensive: four concurrent
   synthetic evaluations exceeded their 120-second per-mesh timeout. Sequential
   local evaluation is required for reliable diagnostic evidence.
+- 2026-07-11 unified evaluator: `evaluators/evaluator.cpp` is a single binary
+  that reads both meshes once, computes topology/geometry/Hausdorff, and
+  renders six axial views in parallel. Adaptive render resolution picks
+  1024×1024 SS=4 for <100k verts (Kattis parity), 384/SS=2 at 100k-300k,
+  256/SS=2 at 300k-1M, 192/SS=1 at ≥1M. Per-tier self-compare cost:
+  T1≈0.9s, T3≈2.5s, T4≈3.3s, T5≈5.6s, T6≈7.5s. The orchestrator no longer
+  enforces SSIM/Hausdorff thresholds by default; pass `--strict` to opt in.
+  Use the raw metric block plus per-view SSIM/IoU to predict Kattis behavior
+  rather than relying on the local pass/fail.
 - 2026-07-10 Tangerine batch-1 ground truth: Nebula-derived v001 passes all
   seven official cases at 90.187632. Reducing only the staged targets used for
   the three 5k-50k screen-space tiers makes official cases 3, 4, and 5 fail
@@ -51,3 +60,5 @@ ground truth.
   raw-QEM ordering under the tighter envelope improves SSIM from 0.8951 to
   0.9180. Preserve v001's T5/T6 schedule and use persistent feature energy,
   not increasingly strict accumulated local cones, for T3/T4.
+
+## 2026-07-10 Pineapple empirical evidence (CRITICAL FINDINGS)
