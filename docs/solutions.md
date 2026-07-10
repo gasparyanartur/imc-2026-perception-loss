@@ -207,3 +207,10 @@ When implementing Bucket 1, these values are a reasonable initial guess. Update 
   guards alone.
 
 These ideas are being tested in the `solutions/banana` smoke-run family.
+
+- 2026-07-10 workflow smoke run: `v17.cpp` was locally valid on all 10 ppsurf
+  meshes at 26.061328% compression, below `v16.cpp`'s 30.447274%. Further
+  increases in T1/T2 retention are therefore not promising without official
+  evidence that the local evaluator underestimates perceptual risk. A
+  concurrent four-candidate synthetic evaluation instead exhausted the native
+  diagnostic timeout, so local candidate sweeps must be sequential.

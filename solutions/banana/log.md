@@ -42,3 +42,36 @@ because the submission service hostname could not be resolved.
 - The next iteration should use Kattis feedback to tune the local evaluator
   and solver together, rather than treating local evaluation as the ranking
   oracle.
+
+## Workflow smoke run (2026-07-10)
+
+- Preflight checks passed: shell linting, Python syntax/imports, native
+  evaluator builds, baseline compilation, and Markdown parsing.
+- `v17.cpp` was evaluated sequentially on `data/ppsurf/`: **VALID (10/10)**,
+  **26.061328%** mean compression. This is worse than the previous local
+  `v16.cpp` result (30.447274%), which confirms that the higher T1/T2 keep
+  ratios trade compression for already ample perceptual margin.
+- A four-candidate local run (`v17`–`v20`) with the synthetic suite launched
+  the native renderer concurrently. All four timed out at the fixed 120-second
+  diagnostic timeout on `tier1_sharp_crystal`, so it produced no usable
+  candidate comparison. Local candidates must be evaluated sequentially; the
+  3–5 batch rule applies to immutable online submissions, not concurrent
+  renderer-heavy local evaluations.
+- `submit.py --help` and `submit_batch.py --help` both succeeded. No online
+  submission was sent because no specific artifact was approved. The prior
+  `banana-smoke.json` records that the service DNS lookup failed, so the next
+  approved 3–5-candidate batch should first verify service reachability and
+  retain its IDs-file for recovery.
+
+### Workflow feedback
+
+- The evaluator should handle a per-mesh diagnostic timeout as a structured
+  invalid record and continue the suite, rather than terminating with a
+  traceback and losing the JSON report.
+- Add a batch-local evaluation script or skill that runs candidates
+  sequentially, collects their JSON reports, ranks valid candidates, and
+  selects an immutable 3–5-candidate online batch.
+- Add a submission preflight skill that checks endpoint DNS/connectivity,
+  validates all sources are immutable `.cpp` files, and creates the IDs-file
+  before uploading. This would turn the earlier DNS failure into an immediate,
+  actionable preflight result.

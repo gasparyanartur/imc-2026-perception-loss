@@ -17,3 +17,10 @@ ground truth.
   10,000 vertices and cross the documented 5,000-vertex tier boundary; the
   lemon baseline's tiny-mesh target is too aggressive for several of them,
   producing SSIM failures despite acceptable Hausdorff values.
+- 2026-07-10 workflow smoke-run evidence: increasing Banana T1/T2 retention
+  beyond v16 preserves a large local perceptual margin but reduces compression
+  (v17: 26.061328% versus v16: 30.447274%). Until official results disagree,
+  the local model predicts that this direction is dominated.
+- Native renderer diagnostics are resource-intensive: four concurrent
+  synthetic evaluations exceeded their 120-second per-mesh timeout. Sequential
+  local evaluation is required for reliable diagnostic evidence.
