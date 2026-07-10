@@ -45,7 +45,7 @@ def _multipart(fields: dict[str, str], file_field: str, filename: str,
     return b"".join(chunks), f"multipart/form-data; boundary={boundary}"
 
 
-def submit_file(path: Path, *, teamsecret: str, problem: str, family: str,
+def submit_file(path: Path, *, teamsecret: str, problem: str, family: str | None,
                 username: str, url: str = DEFAULT_URL) -> dict:
     """Upload ``path`` and return the decoded service response."""
     path = path.expanduser().resolve()
@@ -55,16 +55,15 @@ def submit_file(path: Path, *, teamsecret: str, problem: str, family: str,
         raise SubmissionError(f"only C++ source files (*.cpp) are supported: {path}")
     if not teamsecret:
         raise SubmissionError("teamsecret must not be empty")
-    if not family:
-        raise SubmissionError("family must not be empty")
-
+    fields = {
+        "username": username,
+        "problem_id": problem,
+        "filename": path.name,
+    }
+    if family:
+        fields["family"] = family
     body, content_type = _multipart(
-        {
-            "username": username,
-            "problem_id": problem,
-            "filename": path.name,
-            "family": family,
-        },
+        fields,
         "code",
         path.name,
         path.read_bytes(),
@@ -107,7 +106,8 @@ def main(argv: list[str] | None = None) -> int:
                                                DEFAULT_TEAM_SECRET))
     parser.add_argument("--problem", default=os.environ.get(
         "KATTIS_PROBLEM", DEFAULT_PROBLEM))
-    parser.add_argument("--family", required=True)
+    parser.add_argument("--family",
+                        help="optional family label, recommended for filtering")
     parser.add_argument("--username", default=os.environ.get(
         "KATTIS_USERNAME", DEFAULT_USERNAME))
     parser.add_argument("--url", default=os.environ.get("SUBMIT_URL", DEFAULT_URL),
