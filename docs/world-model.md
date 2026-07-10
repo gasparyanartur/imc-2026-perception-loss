@@ -24,3 +24,8 @@ ground truth.
 - Native renderer diagnostics are resource-intensive: four concurrent
   synthetic evaluations exceeded their 120-second per-mesh timeout. Sequential
   local evaluation is required for reliable diagnostic evidence.
+- The official suite contains a perceptually sensitive case absent from the
+  local ppsurf suite: T1 Vega candidate v21 is locally valid but fails one of
+  seven official cases. A stricter T1 Vega threshold makes the otherwise
+  equivalent v22 valid at 88.364866%, so local T1 SSIM margins need a larger
+  safety buffer.

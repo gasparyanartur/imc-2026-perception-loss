@@ -75,3 +75,18 @@ because the submission service hostname could not be resolved.
   validates all sources are immutable `.cpp` files, and creates the IDs-file
   before uploading. This would turn the earlier DNS failure into an immediate,
   actionable preflight result.
+
+## T1 Vega batch (2026-07-10)
+
+- **Hypothesis:** a Vega post-pass can hold the local SSIM margin while reducing
+  T1 retention below the v02 0.10 floor.
+- `v21`–`v25` were each evaluated sequentially on ppsurf and were locally
+  valid. Their mean local compression rates were 88.686984%, 88.686984%,
+  88.682666%, 86.461431%, and 87.991158%, respectively.
+- Official batch `banana-t1-vega`: `v21` failed one case at 72.322028%;
+  `v22` and `v23` were valid at 88.364866%; `v24` and `v25` were valid at
+  87.897158% and 88.226587%.
+- **Post-mortem:** the local suite did not expose the T1 failure in `v21`.
+  Tightening the T1 Vega gate (as in `v22`) preserves the stronger official
+  result. Future T1 reductions must retain the `v22` gate or add a diagnostic
+  representative of the missing official case.

@@ -274,3 +274,8 @@ These ideas are being tested in the `solutions/banana` smoke-run family.
   evidence that the local evaluator underestimates perceptual risk. A
   concurrent four-candidate synthetic evaluation instead exhausted the native
   diagnostic timeout, so local candidate sweeps must be sequential.
+- 2026-07-10 official T1 Vega batch: locally valid `v21`–`v25` showed that
+  enabling a strict T1 Vega post-pass can safely reduce retention. `v22` and
+  `v23` scored 88.364866% on all seven official cases, while the less strict
+  `v21` failed one official case. Status: promising; retain strict perceptual
+  gates in further T1 experiments.
