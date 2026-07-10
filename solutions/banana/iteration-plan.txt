@@ -1,0 +1,5 @@
+v21 T1 Vega guard, keepRatio 0.07
+v22 T1 Vega guard, keepRatio 0.07, stricter local SSIM gate
+v23 T1 conservative Vega guard, keepRatio 0.07
+v24 T1 Vega guard at the v02 keepRatio
+v25 T1 Vega guard, keepRatio 0.08
