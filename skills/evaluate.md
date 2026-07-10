@@ -6,15 +6,9 @@ debugging and local-evaluator parity work.
 
 ## When to use
 
-After any change to a solver in a solution family — every time you want to
+After any change to a solver in a solution family, every time you want to
 know whether the current mesh-simplification logic produces a valid submission
 and whether it beats the previous best model.
-
-The harness scores the C++ solver on a representative dataset of meshes
-(`data/ppsurf/`, derived from the ppsurf dataset; see
-[`docs/evaluation.md`](../docs/evaluation.md)), not a single mesh. A solver that
-passes a trivial cube but fails real meshes is caught here: the submission is
-only valid when every scenario passes.
 
 ## How to run
 
@@ -36,8 +30,7 @@ scripts/evaluate.sh --candidate solutions/lemon/v115.cpp \
 The candidate is compiled with `scripts/build.sh` and run on every mesh in the
 dataset. Only `.cpp` source candidates are supported. The native evaluator
 runs at the real-grader 1024-pixel resolution by default. The low-resolution
-diagnostic is for quick investigation only and must not be used to accept a
-change.
+diagnostic is for quick investigation.
 
 The harness will:
 
@@ -71,12 +64,18 @@ best previously logged valid run. The `outputs/` history is what makes this
 comparison possible, so do not delete it between iterations.
 
 Bound the search: make at most **5 attempts** to beat the previous best. If none
-of the 5 attempts improves the score, stop iterating and report a short
-post-mortem to the user — the hypotheses for why the score did not improve and
-suggested next directions — rather than looping indefinitely.
+of the 5 attempts improves the score, stop iterating, and drop that specific hypothesis. 
 
 ## Scope
 
 This skill targets C++ solutions, scored across the representative dataset by
 the native evaluator in `evaluators/` and orchestrated by
 `scripts/evaluate_candidate.py`.
+
+## Note:
+
+- The evaluator is a diagnostic tool, not the ground truth. The official score and
+  acceptance are determined by Kattis evaluation. Use the local evaluator to
+  debug and improve parity with Kattis.
+- The evaluator needs to be continuously improved to extract more information about the meshes and score changes. If tests are uninformative or take too long, investigate how to improve the local evaluator and remove the bottlenecks.
+- If test-cases are not informative or too easy, consider adding more challenging scenarios to better evaluate the candidate solutions.

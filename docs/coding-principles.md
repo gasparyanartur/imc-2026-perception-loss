@@ -11,6 +11,11 @@ Separate all parameters into two types:
 
 - **Performance is critical.** The solution should be optimized for performance, with a focus on reducing the number of vertices while maintaining a valid closed 2-manifold within the Hausdorff and SSIM constraints. The solution should be able to handle large meshes efficiently. The more time we can save, the more iterations we can run, and the better the final solution will be.
 
+- **Limited filesize.** Solutions have a 1kB limit on the size of the source code file. This encourages concise and efficient code, and prevents over-engineering. Avoid overuse of whitespace and unnecessary code.
+
+- **Delete unused code and ineffective parameters.** If a parameter is not used, or if a piece of code is not effective, it should be removed. This keeps the codebase clean and focused on the most important aspects of the solution.
+
+
 - **Tiered solutions.** Maintain 6 tiers. The tiers are defined by initial mesh size, listed in the table below: 
   
 | Tier | Initial Mesh Size |
