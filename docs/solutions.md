@@ -190,6 +190,66 @@ When implementing Bucket 1, these values are a reasonable initial guess. Update 
 
 ---
 
+## Honeydew family: ranked 2026-07-10 brainstorm
+
+The Honeydew family starts from Lemon v115. The local baseline is invalid on
+six of ten ppsurf meshes: its T1 zero-retention target over-simplifies the
+small-mesh tier. The following independent ideas are ranked by expected
+official-score impact, implementation risk, and fit with flat-normal SSIM.
+
+1. **Tier-calibrated retention frontier** — Sweep T1/T2 keep ratios and post-pass
+   budgets independently to find the highest valid compression margin. **Status:
+   in progress; rank 1.**
+2. **Occlusion-aware star patches** — Reject star retriangulations when nearby
+   non-incident faces can occlude the altered patch in an axial view. **Status:
+   not started; rank 2.**
+3. **True local Gaussian SSIM** — Replace Vega's global patch statistic with the
+   evaluator's foreground-masked 11×11 Gaussian SSIM. **Status: not started;
+   rank 3.**
+4. **Screen-space normal-area cost** — Weight each face quadric by projected
+   area in all six views, not only world-space area and axial normal magnitude.
+   **Status: not started; rank 4.**
+5. **Silhouette-stratified collapse budget** — Classify vertex projections as
+   silhouette/interior per axial view and reserve aggressive collapses for
+   interior-only vertices. **Status: not started; rank 5.**
+6. **Feature-line quadrics** — Add quadrics along high-dihedral edges to preserve
+   crease location and flat-shaded normal discontinuities. **Status: not
+   started; rank 6.**
+7. **Adaptive per-component normal cones** — Use local normal-cone spread,
+   rather than a fixed deviation threshold, to authorize smooth-region star
+   deletes. **Status: not started; rank 7.**
+8. **Bidirectional sampled envelope** — Track source samples assigned to each
+   survivor, augmenting the existing collapse radius with directional
+   point-to-patch bounds. **Status: not started; rank 8.**
+9. **Multi-root polygon triangulation** — Evaluate all valid ears or a dynamic
+   programming triangulation for star cavities instead of root fans. **Status:
+   not started; rank 9.**
+10. **Constrained vertex relaxation** — Relax surviving vertices on their
+    original local tangent planes after collapse while preserving a geometric
+    envelope. **Status: not started; rank 10.**
+11. **View-balanced priority queues** — Penalize candidates concentrated in the
+    currently most-damaged axial view so visual error is spread across cameras.
+    **Status: not started; rank 11.**
+12. **Curvature-density targets** — Allocate lower keep ratios to low-curvature
+    regions and retain denser samples near curvature extrema. **Status: not
+    started; rank 12.**
+13. **Topology-safe valence regularization** — Include predicted post-collapse
+    valence in the cost to avoid poorly shaped, visually noisy triangles.
+    **Status: not started; rank 13.**
+14. **Coarse-to-fine candidate rescoring** — Use a fast low-resolution axial
+    renderer to pre-rank candidates, followed by exact local SSIM for finalists.
+    **Status: not started; rank 14.**
+15. **Patch coalescing with constrained retriangulation** — Merge nearly
+    coplanar, non-silhouette patches after QEM. **Status: deferred; rank 15**
+    because robust manifold and occlusion handling is high risk.
+
+**Initial Honeydew hypothesis:** the immediate local blocker is T1 retention,
+while screen-space normal preservation is the most likely path beyond the
+retention frontier on the official large tiers. Start with ranked idea 1, then
+use its diagnostic margin to decide whether ideas 2–6 justify their cost.
+
+---
+
 ## Smoke-run ideas: banana family
 
 **Status:** In progress (2026-07-10).
