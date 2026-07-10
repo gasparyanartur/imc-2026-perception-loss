@@ -3,6 +3,9 @@
 Submission is an online side effect and requires an explicit user request or
 approval for the specific C++ artifact(s).
 
+Before submitting, ask the user for an optional family name (strongly
+recommended for later filtering) and confirm the exact source filename(s).
+
 ## One submission
 
 Upload one C++ source with:
