@@ -16,10 +16,12 @@ valid submission for the IMC 2026 challenge.
 
 * **Brainstorming**: Use [`skills/brainstorm.md`](skills/brainstorm.md) to brainstorm new solution ideas. Each idea should have a brief description and an initial status (e.g. "not started", "in progress", "completed"). Score and add notes to existing entries in `docs/solutions.md`.
 
-* **Canonical evaluation**: Use [`skills/evaluate.md`](skills/evaluate.md) and
-  `scripts/evaluate.sh`. The native C++ evaluator is the sole local acceptance
-  path. Use both `data/ppsurf/` and `data/synth_bench/` when the experiment
-  concerns generalizationdo brainstorming in iterate phase. or rendering.
+* **Local diagnostics**: Use [`skills/evaluate.md`](skills/evaluate.md) and
+  `scripts/evaluate.sh` once per candidate to verify behavior and collect
+  detailed diagnostics. Kattis evaluation is the ground truth for score and
+  acceptance. Develop the local evaluator when Kattis and local behavior
+  diverge. Use both `data/ppsurf/` and `data/synth_bench/` when the experiment
+  concerns generalization or rendering.
 
 * **Baseline**: `solutions/lemon/v115.cpp` is the canonical C++ baseline.
   Build arbitrary C++ candidates with `scripts/build.sh`; do not assume a

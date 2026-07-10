@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_URL = "https://imc2-cvmaxxing.arturspace.dev/submit"
 DEFAULT_TEAM_SECRET = "cvmaxxing-95"
 DEFAULT_PROBLEM = "simplifygeometry"
-DEFAULT_USERNAME = "gasparynaartur"
+DEFAULT_USERNAME = "gasparyanartur"
 
 
 class SubmissionError(RuntimeError):
