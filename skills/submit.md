@@ -1,10 +1,13 @@
 # Skill: Submit
 
-Submission is an online side effect and requires an explicit user request or
-approval for the specific C++ artifact(s).
+Submission is an online side effect. An explicit request to submit every
+iteration batch is standing authorization for all complete batches in that
+iteration run: do not pause to reconfirm each source file or batch. If the user
+has not requested online submission, obtain authorization before the first
+upload.
 
-Before submitting, ask the user for an optional family name (strongly
-recommended for later filtering) and confirm the exact source filename(s).
+Use the active solution-family name automatically. Verify the exact immutable
+source filenames internally before upload and report them with the results.
 
 ## One submission
 

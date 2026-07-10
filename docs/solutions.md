@@ -214,3 +214,49 @@ These ideas are being tested in the `solutions/banana` smoke-run family.
   evidence that the local evaluator underestimates perceptual risk. A
   concurrent four-candidate synthetic evaluation instead exhausted the native
   diagnostic timeout, so local candidate sweeps must be sequential.
+
+---
+
+## Tangerine family: screen-space frontier and structural search
+
+**Status:** In progress (2026-07-10); 20 of 100 candidates completed.
+
+**Idea:** Start from the official-valid Nebula v14 screen-space QEM pipeline,
+map each hidden mid-tier boundary with immutable Kattis batches, then introduce
+structural perceptual improvements where target tuning has no slack.
+
+- Batch 1: v001 reproduced the current frontier at 90.187632 with all seven
+  official cases passing. Every joint T2-T4 reduction in v002-v005 failed
+  exactly cases 3-5 and scored 48.135732, despite several full local 10/10
+  passes. Status: joint target tuning rejected; isolate tiers next.
+- Batch 2: independent micro-reductions show zero target slack: T2 −1 point
+  fails case 3, T3 −1 point fails case 4, and T4 −0.5 point fails case 5.
+  Status: retention-only tuning abandoned; guarded perceptual collapse and
+  placement changes are now ranked above further target sweeps.
+
+### Ranked Tangerine structural ideas
+
+1. **Activate dead screen-tier perceptual postpasses — 9.2/10.** Nebula returns
+   before star, Vega, weld, or pair-disk work on cases 3-5. Status: rejected by
+   v011-v015.
+2. **Vega-gated edge finishing — 9.0/10.** Stop QEM at its proven-safe profile,
+   then accept further edge collapses only through local normal/depth rendering.
+   Status: not started; highest-priority follow-up if batch 3 is promising.
+3. **Direction-aware vertex saliency — 8.3/10.** Separate geometric cap cost
+   from rank cost so the absorbed endpoint is selected by projected/curvature
+   saliency instead of loop-order ties. Status: tested in v016-v020; helps the
+   T2/T3 proxy but hurts T4 and does not beat the official baseline.
+4. **Persistent axial silhouette/crease quadrics — 7.8/10.** Add line/plane
+   constraints that survive MEMLESS quadric rebuilding. Status: not started.
+5. **Radius-balanced multi-position placement — 7.4/10.** Add the
+   envelope-minimizing segment point and guarded samples. Status: in progress
+   in v015.
+
+- Batch 3 result: all five postpass/guard profiles failed to improve the
+  90.187632 champion. Cases 3-5 remain the blocker; profiles 2/4 also fail case
+  7, and strict profile 5 is broadly invalid. Status: screen postpass activation
+  rejected; direction-aware saliency promoted to in progress.
+- Batch 4 result: all five candidates are behavior-distinct locally. v020 is
+  6/6 on the proxy and restores official T2/T5, but scores only 41.010414 with
+  T3/T4/T6 invalid. Status: direction-aware curvature rank rejected as a
+  general solution; persistent feature quadrics promoted to in progress.

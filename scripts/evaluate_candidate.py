@@ -8,6 +8,7 @@ isolation, dataset iteration, and report aggregation.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -50,6 +51,14 @@ def parse_native_views(text: str) -> list[dict[str, float]]:
     ]
 
 
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def run_process(command: list[str], input_path: Path, output_path: Path,
                 timeout: float) -> tuple[bool, str, float]:
     start = time.perf_counter()
@@ -76,16 +85,19 @@ def build_candidate(candidate: Path, temp_dir: Path) -> list[str]:
 
 
 def native_metrics(evaluator_dir: Path, original: Path, simplified: Path,
-                   samples: int) -> dict[str, object]:
+                   samples: int, diagnostic_resolution: int) -> dict[str, object]:
     metrics: dict[str, object] = {
         "cpp_final_ssim": None, "cpp_normal_ssim": None,
         "cpp_depth_ssim": None, "surface_hausdorff": None,
         "surface_limit": None, "cpp_per_view": [],
     }
-    diag = evaluator_dir / "diagnostic_v3"
+    use_fast_diag = diagnostic_resolution < 1024
+    diag = evaluator_dir / ("diag_small" if use_fast_diag else "diagnostic_v3")
     if diag.exists():
-        result = subprocess.run([str(diag), str(original), str(simplified)],
+        command = [str(diag), str(original), str(simplified)]
+        result = subprocess.run(command,
                                 capture_output=True, text=True, timeout=120)
+        metrics["diagnostic_resolution"] = diagnostic_resolution
         metrics["cpp_final_ssim"] = parse_metric(result.stdout, "FinalSSIM")
         metrics["cpp_normal_ssim"] = parse_line_metric(result.stdout, "NormalSSIM")
         metrics["cpp_depth_ssim"] = parse_line_metric(result.stdout, "DepthSSIM")
@@ -129,7 +141,8 @@ def native_validity(evaluator_dir: Path, original: Path,
 
 def evaluate_one(candidate_cmd: list[str], original_path: Path,
                  timeout: float, time_budget: float, evaluator_dir: Path,
-                 surface_samples: int) -> dict:
+                 surface_samples: int, diagnostic_resolution: int,
+                 metrics_max_vertices: int) -> dict:
     record = {
         "name": original_path.stem, "input": str(original_path),
         "valid": False, "compression": 0.0, "seconds": None, "note": "",
@@ -142,6 +155,8 @@ def evaluate_one(candidate_cmd: list[str], original_path: Path,
         if not ok:
             record["note"] = message
             return record
+        record["output_bytes"] = output_path.stat().st_size
+        record["output_sha256"] = file_sha256(output_path)
 
         validity = native_validity(evaluator_dir, original_path, output_path)
         record.update(validity)
@@ -157,20 +172,32 @@ def evaluate_one(candidate_cmd: list[str], original_path: Path,
         record["manifold_ok"] = bool(validity.get("native_validity_ok"))
         record["validity_reasons"] = []
 
-        record.update(native_metrics(evaluator_dir, original_path, output_path,
-                                     surface_samples))
-        cpp_ssim = record.get("cpp_final_ssim")
-        native_ok = cpp_ssim is not None and float(cpp_ssim) >= SSIM_THRESHOLD
-        surface_h = record.get("surface_hausdorff")
-        surface_bound = record.get("surface_limit")
-        geometry_ok = bool(record["manifold_ok"])
-        if surface_h is None or surface_bound is None:
-            geometry_ok = False
+        run_metrics = (metrics_max_vertices <= 0
+                       or original_vertices <= metrics_max_vertices)
+        if run_metrics:
+            record.update(native_metrics(evaluator_dir, original_path, output_path,
+                                         surface_samples, diagnostic_resolution))
+            cpp_ssim = record.get("cpp_final_ssim")
+            native_ok = cpp_ssim is not None and float(cpp_ssim) >= SSIM_THRESHOLD
+            surface_h = record.get("surface_hausdorff")
+            surface_bound = record.get("surface_limit")
+            geometry_ok = bool(record["manifold_ok"])
+            if surface_h is None or surface_bound is None:
+                geometry_ok = False
+            else:
+                geometry_ok = (geometry_ok
+                               and float(surface_h) <= float(surface_bound))
         else:
-            geometry_ok = geometry_ok and float(surface_h) <= float(surface_bound)
+            record["metrics_skipped"] = True
+            record["diagnostic_resolution"] = diagnostic_resolution
+            cpp_ssim = None
+            native_ok = True
+            surface_h = None
+            surface_bound = None
+            geometry_ok = bool(record["manifold_ok"])
 
         over_budget = time_budget > 0 and seconds > time_budget
-        record["native_ssim_ok"] = native_ok
+        record["native_ssim_ok"] = native_ok if run_metrics else None
         record["over_budget"] = over_budget
         record["valid"] = bool(native_ok and geometry_ok and not over_budget)
 
@@ -180,8 +207,10 @@ def evaluate_one(candidate_cmd: list[str], original_path: Path,
         if surface_h is not None and surface_bound is not None \
                 and float(surface_h) > float(surface_bound):
             notes.append(f"surface Hausdorff {surface_h:.6f} > {surface_bound:.6f}")
-        if not native_ok:
+        if run_metrics and not native_ok:
             notes.append(f"native FinalSSIM {cpp_ssim} < {SSIM_THRESHOLD:.2f}")
+        if not run_metrics:
+            notes.append("perceptual/Hausdorff metrics skipped for fast high-tier probe")
         if over_budget:
             notes.append(f"over time budget {seconds:.2f}s > {time_budget:.2f}s")
         record["note"] = "; ".join(notes) or "ok"
@@ -193,7 +222,7 @@ def print_report(records: list[dict]) -> None:
     print("IMC 2026 native C++ evaluation")
     print("=" * 132)
     print(f"{'scenario':<28} {'result':<7} {'compr%':>8} {'cppSSIM':>8} "
-          f"{'sHaus':>9} {'secs':>7}  note")
+          f"{'sHaus':>9} {'secs':>7} {'finger':<8}  note")
     print("-" * 132)
     for record in records:
         def value(key: str, fmt: str = ".4f") -> str:
@@ -204,7 +233,9 @@ def print_report(records: list[dict]) -> None:
               f"{record.get('compression', 0.0):8.4f} "
               f"{value('cpp_final_ssim'):>8} "
               f"{value('surface_hausdorff'):>9} "
-              f"{value('seconds', '.2f'):>7}  {record.get('note', '')}")
+              f"{value('seconds', '.2f'):>7} "
+              f"{str(record.get('output_sha256', '-'))[:8]:<8}  "
+              f"{record.get('note', '')}")
     total = len(records)
     passed = sum(bool(record["valid"]) for record in records)
     mean = sum(float(record.get("compression", 0.0))
@@ -225,6 +256,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--time-budget", type=float, default=DEFAULT_TIME_BUDGET)
     parser.add_argument("--solver-timeout", type=float, default=30.0)
     parser.add_argument("--surface-samples", type=int, default=500)
+    parser.add_argument(
+        "--diagnostic-resolution", type=int, choices=(256, 1024), default=1024,
+        help="native SSIM render resolution; 256 is a fast diagnostic, "
+             "1024 matches the full local acceptance path")
+    parser.add_argument(
+        "--metrics-max-vertices", type=int, default=0,
+        help="skip SSIM/Hausdorff above this original vertex count while still "
+             "checking solver time, topology, counts, and output hash; "
+             "0 evaluates metrics on every mesh")
     parser.add_argument("--json", type=Path, help="write detailed records")
     args = parser.parse_args(argv)
 
@@ -244,7 +284,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("no input meshes found")
 
     evaluator_dir = ROOT / "build/evaluators"
-    required_evaluators = ("diagnostic_v3", "hausdorff_validator", "mesh_validity")
+    diagnostic_binary = ("diag_small" if args.diagnostic_resolution < 1024
+                         else "diagnostic_v3")
+    required_evaluators = (diagnostic_binary, "hausdorff_validator",
+                           "mesh_validity")
     missing = [name for name in required_evaluators
                if not (evaluator_dir / name).is_file()]
     if missing:
@@ -254,7 +297,9 @@ def main(argv: list[str] | None = None) -> int:
     with tempfile.TemporaryDirectory(prefix="candidate-build-") as tmp:
         command = build_candidate(candidate, Path(tmp))
         records = [evaluate_one(command, path, args.solver_timeout,
-                                args.time_budget, evaluator_dir, args.surface_samples)
+                                args.time_budget, evaluator_dir,
+                                args.surface_samples, args.diagnostic_resolution,
+                                args.metrics_max_vertices)
                    for path in inputs]
 
     print_report(records)

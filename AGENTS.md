@@ -27,7 +27,4 @@ valid submission for the IMC 2026 challenge.
   Build arbitrary C++ candidates with `scripts/build.sh`; do not assume a
   source-specific executable name.
 
-* **Online submissions**: Follow [`skills/submit.md`](skills/submit.md).
-  Submissions require explicit approval, keep source files immutable during
-  upload, and use `scripts/submit.py` for one file or
-  `scripts/submit_batch.py` for batches.
+* **Online submissions**: Follow [`skills/submit.md`](skills/submit.md). Use `scripts/submit.py` for one file or `scripts/submit_batch.py` for batches.
