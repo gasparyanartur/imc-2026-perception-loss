@@ -29,3 +29,8 @@ ground truth.
   seven official cases. A stricter T1 Vega threshold makes the otherwise
   equivalent v22 valid at 88.364866%, so local T1 SSIM margins need a larger
   safety buffer.
+- The local T1 retention frontier is sharp: reducing Banana's T1 keep ratio
+  from 0.060 to 0.055 makes `abc_00010098` fail native SSIM, while stricter
+  Vega post-pass controls at 0.060 do not alter the rendered result. This
+  indicates that the base collapse phase, rather than the guarded Vega
+  post-pass, determines this local failure boundary.

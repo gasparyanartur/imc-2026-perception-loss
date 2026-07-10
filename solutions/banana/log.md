@@ -90,3 +90,22 @@ because the submission service hostname could not be resolved.
   Tightening the T1 Vega gate (as in `v22`) preserves the stronger official
   result. Future T1 reductions must retain the `v22` gate or add a diagnostic
   representative of the missing official case.
+
+## T1 Vega frontier continuation (2026-07-10)
+
+- **Hypothesis:** the official-best `v26.cpp` (`T1 keepRatio = 0.060`) is near
+  the retention boundary. A stricter T1 Vega geometry gate may make lower
+  retention safe without materially reducing compression.
+- `v31.cpp` and `v32.cpp` (`keepRatio = 0.050`) were locally invalid at
+  90.000303%: `abc_00010098` failed native FinalSSIM (0.8496). The
+  extra-strict Vega threshold in `v32.cpp` did not change the output.
+- `v33.cpp` (`keepRatio = 0.055`) was locally invalid at 89.699254% on the
+  same mesh (FinalSSIM 0.8857).
+- `v34.cpp` (tighter Vega gate, `keepRatio = 0.060`) and `v35.cpp`
+  (conservative Vega geometry, `keepRatio = 0.060`) were locally valid on all
+  10 meshes at 89.381069%. Their identical results show the T1 Vega
+  constraints did not bind at this retention level.
+- **Post-mortem:** on the local suite, the viable T1 frontier lies between
+  0.055 and 0.060, and tightening the existing post-pass alone cannot recover
+  lower retention. Do not submit these candidates without explicit approval;
+  the next meaningful experiment should change a non-retention mechanism.

@@ -279,3 +279,8 @@ These ideas are being tested in the `solutions/banana` smoke-run family.
   `v23` scored 88.364866% on all seven official cases, while the less strict
   `v21` failed one official case. Status: promising; retain strict perceptual
   gates in further T1 experiments.
+- 2026-07-10 T1 Vega frontier continuation: `v31`–`v33` established a local
+  failure cliff below `keepRatio = 0.060` (all failed `abc_00010098` SSIM);
+  `v34` and `v35` were valid at 89.381069% locally but their stricter Vega
+  controls were non-binding. The T1 retention sweep is exhausted locally;
+  pivot the next batch to a distinct post-pass mechanism.
