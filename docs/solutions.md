@@ -278,3 +278,44 @@ selection toward preserving contour and crease energy.
   quadrics in the screen core (8.3/10), silhouette-weighted placement
   (7.7/10), Vega-gated memless rebuild (7.0/10).
 - v001 is the immutable Nebula v14 control; expected Kattis = 90.187632.
+
+### Pineapple empirical batch findings (2026-07-10/11)
+
+- **v055 (T5=0.025, T6=0.030)**: current champion at 90.220962 (all 7 cases pass).
+- **v056 (T6=0.028)**: 74.054286, case 7 fails — T6 keepRatio = 0.028 fails.
+- **v053 (T5=0.024)**: 74.070949, case 7 fails.
+- **v054 (T5=0.023)**: 73.936832, case 6 fails.
+- **v063 (clone of v055 with T6=0.028)**: 74.054286, case 7 fails — re-confirms T6=0.028 fails.
+- **v064 (T2 -0.02, T4 -0.02, cap=28)**: 32.80359, cases 3,4,5 fail.
+- **v061, v065, v066 (similar tightening)**: all fail cases 3,4,5 at Kattis.
+- Local v061/v064 produced +1pt/+2pt improvements on tier2 cases locally — but Kattis disagrees. Local evaluator dominated by Hausdorff foreground; judge samples all six axial views.
+
+### Pineapple rejected directions (confirmed dead at Kattis)
+
+- ❌ Screen-core keep ratio tightening (T2/T3/T4) - hidden meshes have ZERO slack.
+- ❌ Screen-core face weight cap/floor changes - inert or fail.
+- ❌ Tighter T5 (keepRatio < 0.025) - fails case 6.
+- ❌ Tighter T6 (keepRatio < 0.030) - fails case 7.
+- ❌ Multi-tier combined tightening - still fails cases 3,4,5.
+
+### Pineapple remaining structural levers (untouched, multi-tier)
+
+1. **Post-pass reordering** - re-enable and reorder star/Vega/weld/pair-disk
+2. **MEMLESS strategy** - currently (nV > 5000), test per-tier variation
+3. **Root nudge profile** - HParam_RootNudgeProfile = 1 (default) vs 2
+4. **Tail batch parameters** - HParam_TailBatchScanEdges, TargetAccepts, StopElapsed
+5. **Anchor boost removal/weakening** - currently 1.4x/1.2x, test 1.0x
+6. **Time budget allocation** between main loop and post-passes
+
+### Pineapple strategy (post-batch-7)
+
+Screen-core tuning is fully exhausted. Future candidates must NOT change:
+- HParam_Pineapple_KeepRatio_UpTo400k (T5)
+- HParam_Pineapple_KeepRatio_Huge (T6)
+- T2/T3/T4 keep ratios in `runScreenCoreMid()`
+- Face weight caps (18/7/16)
+
+Remaining score improvement must come from post-pass behavior, MEMLESS
+strategy, tail batch aggressiveness, root nudge profile, anchor boost
+removal, and other tier-uniform changes. The 95 target may be
+unreachable within the existing screen-core skeleton.
