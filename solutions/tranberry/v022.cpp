@@ -1,5 +1,11 @@
-// Pineapple v183: v182 + T4 weld maxValence 16→20 + scanVertices 2800→3000.
-// Push T4 weld vertex scan budget and valence ceiling.
+// Pineapple v072: Tail batch more aggressive + extended time budget.
+// scanEdges: 65536 → 131072 (2x more edges per batch)
+// targetAccepts: 2048 → 4096 (2x more accepted per batch)
+// tailStopElapsed: 19.4 → 19.8 (use 0.4s more tail time)
+// Hypothesis: the tail batch handles stranded edges that the main loop can't.
+// Current values were tuned conservatively. With 2x scan and 2x target, we
+// can process more stranded edges per round; extended stop gives more rounds.
+// Affects ALL tiers: T5/T6/T7 use the tail batch in collapseLoop().
 #include <bits/stdc++.h>
 
 static constexpr double HParam_Pineapple_KeepRatio_UpTo400k = 0.025;
@@ -33,15 +39,15 @@ static constexpr double HParam_KeepRatio_Huge = HParam_Pineapple_KeepRatio_Huge;
 
 static constexpr double HParam_QemCostCapCoeff = 0.0375;
 
-static constexpr int HParam_TailOriginalVertexThreshold = 1000000;
+static constexpr int HParam_TailOriginalVertexThreshold = 0;
 
 static constexpr double HParam_TailBatchElapsedStart = 11.8;
 
-static constexpr double HParam_TailBatchStopElapsed = 19.4;
+static constexpr double HParam_TailBatchStopElapsed = 19.8;
 
-static constexpr int HParam_TailBatchScanEdges = 65536;
+static constexpr int HParam_TailBatchScanEdges = 131072;
 
-static constexpr int HParam_TailBatchTargetAccepts = 2048;
+static constexpr int HParam_TailBatchTargetAccepts = 4096;
 
 static constexpr bool HParam_EnableRootNudge = true;
 
@@ -1142,7 +1148,8 @@ private:
         if (nV <= HParam_TailOriginalVertexThreshold)
             return false;
         double e = elapsed();
-        return e > HParam_TailBatchElapsedStart && e < HParam_TailBatchStopElapsed;
+        double adaptiveStart = nV <= 50000 ? 6.0 : (nV <= 400000 ? 8.5 : HParam_TailBatchElapsedStart);
+        return e < HParam_TailBatchStopElapsed && (e > adaptiveStart || pq.empty());
     }
 
     bool edgeExists(int a, int b) const { return a >= 0 && b >= 0 && a < (int)verts.size() && b < (int)verts.size() && !vdead[a] && !vdead[b] && vneigh[a].contains(b); }
@@ -1297,6 +1304,8 @@ private:
                 ++scanned;
 
                 double cc = cheapEdgeCost(a, b);
+                double radiusLoad = max(crad[a], crad[b]) / (hausd + 1e-18);
+                cc *= 1.0 + 0.75 * radiusLoad * radiusLoad;
                 if (!(cc <= costCap))
                     continue;
                 cands.push_back({a, b, cc});
@@ -2253,20 +2262,14 @@ private:
     bool weldTierEnabled() const
     {
 
-        int t = originalTier();
-        return t == 4 || t == 5 || t == 6;
+        return originalTier() == 4;
     }
 
     StarParams weldParams() const
     {
 
-        int t = originalTier();
-        if (t == 4)
-            return {20, 0.050, 0.060, 0.66, 0.0110, 3000, 280000, 1, 0.52, 2.30};
-        if (t == 5)
-            return {10, 0.020, 0.032, 0.80, 0.0150, 1500, 280000, 1, 0.60, 2.80};
-        if (t == 6)
-            return {8, 0.024, 0.038, 0.95, 0.0180, 2500, 280000, 1, 0.68, 5.00};
+        if (originalTier() == 4)
+            return {6, 0.015, 0.024, 0.66, 0.0110, 760, 280000, 1, 0.52, 2.30};
 
         return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     }
@@ -2373,13 +2376,8 @@ private:
     StarParams pairDiskParams() const
     {
 
-        int t = originalTier();
-        if (t == 4)
+        if (originalTier() == 4)
             return {8, 0.018, 0.029, 0.66, 0.0025, 90, 120000, 1, 0.28, 0.85};
-        if (t == 5)
-            return {8, 0.024, 0.038, 0.78, 0.0035, 90, 120000, 1, 0.30, 0.95};
-        if (t == 6)
-            return {8, 0.030, 0.045, 0.95, 0.0045, 90, 120000, 1, 0.34, 1.05};
 
         return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     }

@@ -1,9 +1,4 @@
-// Pineapple v183: v182 + T4 weld maxValence 16→20 + scanVertices 2800→3000.
-// Push T4 weld vertex scan budget and valence ceiling.
 #include <bits/stdc++.h>
-
-static constexpr double HParam_Pineapple_KeepRatio_UpTo400k = 0.025;
-static constexpr double HParam_Pineapple_KeepRatio_Huge = 0.028;
 
 using namespace std;
 
@@ -21,19 +16,19 @@ static constexpr int HParam_OutputPrecisionSignificantDigits = 10;
 
 static constexpr double HParam_KeepRatio_UpTo5k = 0.00;
 
-static constexpr double HParam_KeepRatio_UpTo25k = 0.32;
+static constexpr double HParam_KeepRatio_UpTo25k = 0.288;
 
-static constexpr double HParam_KeepRatio_UpTo45k = 0.16;
+static constexpr double HParam_KeepRatio_UpTo45k = 0.144;
 
-static constexpr double HParam_KeepRatio_UpTo50k = 0.1;
+static constexpr double HParam_KeepRatio_UpTo50k = 0.09;
 
-static constexpr double HParam_KeepRatio_UpTo400k = HParam_Pineapple_KeepRatio_UpTo400k;
+static constexpr double HParam_KeepRatio_UpTo400k = 0.0225;
 
-static constexpr double HParam_KeepRatio_Huge = HParam_Pineapple_KeepRatio_Huge;
+static constexpr double HParam_KeepRatio_Huge = 0.0288;
 
 static constexpr double HParam_QemCostCapCoeff = 0.0375;
 
-static constexpr int HParam_TailOriginalVertexThreshold = 1000000;
+static constexpr int HParam_TailOriginalVertexThreshold = 400000;
 
 static constexpr double HParam_TailBatchElapsedStart = 11.8;
 
@@ -67,7 +62,10 @@ static constexpr double HParam_VegaScoreGeomWeight = 0.0018;
 
 static constexpr double HParam_VegaC1 = (0.01 * 255.0) * (0.01 * 255.0);
 
+static constexpr int TParam_UnifiedPostOrder = 1;
 static constexpr double HParam_VegaC2 = (0.03 * 255.0) * (0.03 * 255.0);
+
+static constexpr int TParam_PerceptualRankProfile = 1;
 
 struct Vec3
 {
@@ -236,7 +234,7 @@ struct CollapseCandidate
 
     int absorbed = -1, kept = -1, versionAbsorbed = -1, versionKept = -1;
 
-    double cost = CParam_Inf, mergedRadius = 0.0;
+    double cost = CParam_Inf, geomCost = CParam_Inf, mergedRadius = 0.0;
 
     Vec3 position;
 
@@ -254,104 +252,18 @@ public:
 public:
     void run()
     {
-
         readMesh();
-
-        if (nV <= 10)
-        {
-            writeMesh();
-            return;
-        }
-
+        if (nV <= 10) { writeMesh(); return; }
         startTime = chrono::steady_clock::now();
-
-        if (nV > 5000 && nV <= 50000)
-        {
-            runScreenCoreMid();
-            compact();
-            writeMesh();
-            return;
-        }
-
-        initScale();
-
-        buildConnectivity();
-
-        initFaceWeights();
-
-        initQueue();
-
-        collapseLoop();
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 0.95)
-        {
-
-            valenceWeldPass();
-        }
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 1.10)
-        {
-
-            pairDiskPass();
-        }
-
-        // Star-delete is disabled on the huge tier (T7): on very large, irregular
-
-        // meshes the time-gated retriangulation is nondeterministic and can cross a
-
-        // validity/Hausdorff edge on some judge runs. T7 gains little from it anyway
-
-        // (it is Hausdorff-capped, not flat-vertex-capped). Keep it for T2-T6.
-
-        if (nV <= HParam_TailOriginalVertexThreshold &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 1.0)
-        {
-
-            collapseInvisibleEdges();
-        }
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 0.88)
-        {
-
-            valenceWeldPass();
-        }
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 0.78)
-        {
-
-            pairDiskPass();
-        }
-
-        if (HParam_EnableVegaSsimPass &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 0.65)
-        {
-
-            vegaSsimStarPass();
-        }
-
-        // Sharon v13: 2nd Vega pass (Cherry v24 style)
-
-        if (HParam_EnableVegaSsimPass &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 0.30)
-        {
-
-            vegaSsimStarPass();
-        }
-
-        if (HParam_EnableVegaSsimPass &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 0.12)
-        {
-
-            vegaSsimStarPass();
-        }
-
-        compact();
-
-        writeMesh();
+        bool screen = nV > 5000 && nV <= 50000;
+        if (screen) runScreenCoreMid();
+        else { initScale(); buildConnectivity(); initFaceWeights(); initQueue(); collapseLoop(); }
+        if (HParam_EnableVegaSsimPass && elapsed() < HParam_TimeBudgetSeconds - 2.2) vegaSsimStarPass();
+        if (elapsed() < HParam_TimeBudgetSeconds - 1.7) collapseInvisibleEdges();
+        if (elapsed() < HParam_TimeBudgetSeconds - 1.25) valenceWeldPass();
+        if (elapsed() < HParam_TimeBudgetSeconds - 0.90) pairDiskPass();
+        if (elapsed() < HParam_TimeBudgetSeconds - 0.22) valenceWeldPass();
+        compact(); writeMesh();
     }
 
 private:
@@ -700,7 +612,7 @@ private:
                 vmoment[i] = anchorPointQuadric(verts[i], 1e-6);
         if (screenTier == 3)
         {
-            int finalTarget = (int)floor(nV * 0.145), safeTarget = (int)floor(nV * 0.16);
+            int finalTarget = (int)floor(nV * 0.1305), safeTarget = (int)floor(nV * 0.144);
             buildRasterImportanceTier3(384);
             initFaceWeights();
             targetV = safeTarget;
@@ -720,7 +632,7 @@ private:
             }
             return;
         }
-        vector<double> st = screenTier == 2 ? vector<double>{0.36, 0.33, 0.30} : vector<double>{0.14, 0.10, 0.08};
+        vector<double> st = screenTier == 2 ? vector<double>{0.324, 0.297, 0.270} : vector<double>{0.126, 0.090, 0.072};
         for (double kr : st)
         {
             if (elapsed() > HParam_TimeBudgetSeconds - 0.5)
@@ -1028,8 +940,35 @@ private:
         c.versionKept = vver[kp];
 
         c.position = p;
-        c.cost = q.evaluate(p);
+        c.geomCost = q.evaluate(p);
+        c.cost = c.geomCost + perceptualRankCost(ab, kp, p);
         return c;
+    }
+
+    double perceptualRankCost(int ab, int kp, const Vec3 &p) const
+    {
+        double nl=0, pl=0, al=0, worst=0, total=0;
+        vector<int> fs=vfaces[ab];
+        sort(fs.begin(),fs.end()); fs.erase(unique(fs.begin(),fs.end()),fs.end());
+        for(int fi:fs){
+            if(fi<0||fi>=nF||fdead[fi]) continue;
+            const Face &f=faces[fi]; bool ha=false,hk=false; Vec3 o[3],n[3];
+            for(int k=0;k<3;++k){o[k]=verts[f.v[k]];ha|=f.v[k]==ab;hk|=f.v[k]==kp;n[k]=(f.v[k]==ab||f.v[k]==kp)?p:o[k];}
+            if(ha&&hk) continue;
+            Vec3 no=cross(o[1]-o[0],o[2]-o[0]), nn=cross(n[1]-n[0],n[2]-n[0]);
+            double lo=norm(no),ln=norm(nn); if(lo<1e-15||ln<1e-15) continue;
+            double ao=.5*lo,an=.5*ln; no=no/lo;nn=nn/ln;
+            double nd=max(0.0,1.0-dot(no,nn)), ar=fabs(an-ao)/(ao+1e-18); total+=ao; nl+=ao*nd*nd; al+=ao*min(4.0,ar*ar);
+            double fw=0; Vec3 d=p-verts[ha?ab:kp];
+            for(int v=0;v<6;++v){double ds=v<2?d.y*d.y+d.z*d.z:(v<4?d.x*d.x+d.z*d.z:d.x*d.x+d.y*d.y);double facing=fabs(v<2?no.x:(v<4?no.y:no.z));double x=ao*facing*ds/(diag*diag+1e-18);fw=max(fw,x);pl+=x;} worst+=fw;
+        }
+        double ia=1.0/(total+1e-18);nl*=ia;pl*=ia;al*=ia;worst*=ia;double s;
+        if(TParam_PerceptualRankProfile==1)s=5*nl+.15*al;
+        else if(TParam_PerceptualRankProfile==2)s=24*pl+.5*al;
+        else if(TParam_PerceptualRankProfile==3)s=3*nl+10*pl+.8*al;
+        else if(TParam_PerceptualRankProfile==4)s=max(4*nl,18*pl)+al;
+        else s=4*nl+12*pl+30*worst+.4*al;
+        return 0.02 * costCap*min(8.0,max(0.0,s));
     }
 
     double cheapEdgeCost(int a, int b) const
@@ -1110,6 +1049,8 @@ private:
                     continue;
 
                 CollapseCandidate c = makeCandidate(ab, kp, pos[i], q);
+
+                if (c.cost - c.geomCost > 0.0015 * costCap) continue;
 
                 c.mergedRadius = mr;
 
@@ -1343,7 +1284,7 @@ private:
                 continue;
 
             auto best = computeBestValid(e.a, e.b);
-            if (!best.valid() || best.cost > costCap)
+            if (!best.valid() || best.geomCost > costCap)
                 continue;
 
             applyCollapse(best.absorbed, best.kept, best.position, best.mergedRadius);
@@ -1392,7 +1333,7 @@ private:
                 continue;
             }
 
-            if (c.cost > costCap)
+            if (c.geomCost > costCap)
                 break;
 
             if (countCommonFaces(a, b) != 2)
@@ -1402,7 +1343,7 @@ private:
                 continue;
 
             auto best = computeBestValid(a, b);
-            if (!best.valid() || best.cost > costCap)
+            if (!best.valid() || best.geomCost > costCap)
                 continue;
 
             applyCollapse(best.absorbed, best.kept, best.position, best.mergedRadius);
@@ -2253,20 +2194,14 @@ private:
     bool weldTierEnabled() const
     {
 
-        int t = originalTier();
-        return t == 4 || t == 5 || t == 6;
+        return originalTier() == 4;
     }
 
     StarParams weldParams() const
     {
 
-        int t = originalTier();
-        if (t == 4)
-            return {20, 0.050, 0.060, 0.66, 0.0110, 3000, 280000, 1, 0.52, 2.30};
-        if (t == 5)
-            return {10, 0.020, 0.032, 0.80, 0.0150, 1500, 280000, 1, 0.60, 2.80};
-        if (t == 6)
-            return {8, 0.024, 0.038, 0.95, 0.0180, 2500, 280000, 1, 0.68, 5.00};
+        if (originalTier() == 4)
+            return {6, 0.015, 0.024, 0.66, 0.0110, 760, 280000, 1, 0.52, 2.30};
 
         return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     }
@@ -2373,13 +2308,8 @@ private:
     StarParams pairDiskParams() const
     {
 
-        int t = originalTier();
-        if (t == 4)
+        if (originalTier() == 4)
             return {8, 0.018, 0.029, 0.66, 0.0025, 90, 120000, 1, 0.28, 0.85};
-        if (t == 5)
-            return {8, 0.024, 0.038, 0.78, 0.0035, 90, 120000, 1, 0.30, 0.95};
-        if (t == 6)
-            return {8, 0.030, 0.045, 0.95, 0.0045, 90, 120000, 1, 0.34, 1.05};
 
         return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     }

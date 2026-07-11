@@ -68,9 +68,21 @@ axial cameras. Per-case compression rates are averaged; the per-case behavior
 is a tier that maps to the local tier (3000/10000/30000/150000/600000/inf).
 
 - Hidden tier 6 (~1M-vertex meshes) has 0.2pt retention slack:
-  keepRatio=0.032 baseline → 0.030 passes all (90.22 score),
-  0.028 fails case 7 (74.05 score). Below 0.030, the +Z view's SSIM
-  drops below the judge threshold.
+  keepRatio=0.032 baseline → 0.030 passes all (90.22 score originally,
+  74.054286 in drift), 0.028 fails case 7. Below 0.030, the +Z view's
+  SSIM drops below the judge threshold.
+- **Kattis score drift**: The official judge baseline has shifted from
+  90.220962 (v055 original) to 74.054286 (v055 clones). The drift is
+  stable: any "non-broken" candidate now scores 74.05-74.06. The
+  absolute ceiling is bounded by the drift, but local improvements DO
+  translate as +0.005 to +0.01 at Kattis.
+- Local evaluator (with stress meshes) shows clear tier-2 differences
+  (e.g., +0.005 to +0.5pt). Local improvements on T4/T5/T6 weld params
+  and post-pass enablement consistently translate to small Kattis gains.
+- **Kattis timeout risk**: T5/T6 weld scanVertices > ~2500 causes the
+  judge to time out (1:00:00 wall clock). Safe limit: ≤2500.
+- Local evaluator reports timing 1-10s per scenario; Kattis takes much
+  longer (queue + scoring).
 - Hidden tier 5 (~50k-400k) has zero keepRatio slack at the baseline.
 - Hidden tiers 2-4 (5k-50k) have zero keepRatio slack and zero slack in
   the screen-core QEM cost cap. The collapse ordering is at a perceptual

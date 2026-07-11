@@ -1,9 +1,4 @@
-// Pineapple v183: v182 + T4 weld maxValence 16→20 + scanVertices 2800→3000.
-// Push T4 weld vertex scan budget and valence ceiling.
 #include <bits/stdc++.h>
-
-static constexpr double HParam_Pineapple_KeepRatio_UpTo400k = 0.025;
-static constexpr double HParam_Pineapple_KeepRatio_Huge = 0.028;
 
 using namespace std;
 
@@ -27,13 +22,13 @@ static constexpr double HParam_KeepRatio_UpTo45k = 0.16;
 
 static constexpr double HParam_KeepRatio_UpTo50k = 0.1;
 
-static constexpr double HParam_KeepRatio_UpTo400k = HParam_Pineapple_KeepRatio_UpTo400k;
+static constexpr double HParam_KeepRatio_UpTo400k = 0.025;
 
-static constexpr double HParam_KeepRatio_Huge = HParam_Pineapple_KeepRatio_Huge;
+static constexpr double HParam_KeepRatio_Huge = 0.032;
 
 static constexpr double HParam_QemCostCapCoeff = 0.0375;
 
-static constexpr int HParam_TailOriginalVertexThreshold = 1000000;
+static constexpr int HParam_TailOriginalVertexThreshold = 400000;
 
 static constexpr double HParam_TailBatchElapsedStart = 11.8;
 
@@ -67,6 +62,7 @@ static constexpr double HParam_VegaScoreGeomWeight = 0.0018;
 
 static constexpr double HParam_VegaC1 = (0.01 * 255.0) * (0.01 * 255.0);
 
+static constexpr int TParam_OcclusionProfile = 2;
 static constexpr double HParam_VegaC2 = (0.03 * 255.0) * (0.03 * 255.0);
 
 struct Vec3
@@ -254,104 +250,20 @@ public:
 public:
     void run()
     {
-
         readMesh();
-
-        if (nV <= 10)
-        {
-            writeMesh();
-            return;
-        }
-
+        if (nV <= 10) { writeMesh(); return; }
         startTime = chrono::steady_clock::now();
-
-        if (nV > 5000 && nV <= 50000)
-        {
-            runScreenCoreMid();
-            compact();
-            writeMesh();
-            return;
+        bool screen = nV > 5000 && nV <= 50000;
+        if (screen) runScreenCoreMid();
+        else { initScale(); buildConnectivity(); initFaceWeights(); initQueue(); collapseLoop(); }
+        if (elapsed() < HParam_TimeBudgetSeconds - 2.0) occlusionStarPass();
+        if (!screen) {
+            if (elapsed() < HParam_TimeBudgetSeconds - 1.10) valenceWeldPass();
+            if (elapsed() < HParam_TimeBudgetSeconds - 0.90) pairDiskPass();
+            if (nV <= HParam_TailOriginalVertexThreshold && elapsed() < HParam_TimeBudgetSeconds - 0.65) collapseInvisibleEdges();
+            if (HParam_EnableVegaSsimPass && elapsed() < HParam_TimeBudgetSeconds - 0.25) vegaSsimStarPass();
         }
-
-        initScale();
-
-        buildConnectivity();
-
-        initFaceWeights();
-
-        initQueue();
-
-        collapseLoop();
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 0.95)
-        {
-
-            valenceWeldPass();
-        }
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 1.10)
-        {
-
-            pairDiskPass();
-        }
-
-        // Star-delete is disabled on the huge tier (T7): on very large, irregular
-
-        // meshes the time-gated retriangulation is nondeterministic and can cross a
-
-        // validity/Hausdorff edge on some judge runs. T7 gains little from it anyway
-
-        // (it is Hausdorff-capped, not flat-vertex-capped). Keep it for T2-T6.
-
-        if (nV <= HParam_TailOriginalVertexThreshold &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 1.0)
-        {
-
-            collapseInvisibleEdges();
-        }
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 0.88)
-        {
-
-            valenceWeldPass();
-        }
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 0.78)
-        {
-
-            pairDiskPass();
-        }
-
-        if (HParam_EnableVegaSsimPass &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 0.65)
-        {
-
-            vegaSsimStarPass();
-        }
-
-        // Sharon v13: 2nd Vega pass (Cherry v24 style)
-
-        if (HParam_EnableVegaSsimPass &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 0.30)
-        {
-
-            vegaSsimStarPass();
-        }
-
-        if (HParam_EnableVegaSsimPass &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 0.12)
-        {
-
-            vegaSsimStarPass();
-        }
-
-        compact();
-
-        writeMesh();
+        compact(); writeMesh();
     }
 
 private:
@@ -2253,20 +2165,14 @@ private:
     bool weldTierEnabled() const
     {
 
-        int t = originalTier();
-        return t == 4 || t == 5 || t == 6;
+        return originalTier() == 4;
     }
 
     StarParams weldParams() const
     {
 
-        int t = originalTier();
-        if (t == 4)
-            return {20, 0.050, 0.060, 0.66, 0.0110, 3000, 280000, 1, 0.52, 2.30};
-        if (t == 5)
-            return {10, 0.020, 0.032, 0.80, 0.0150, 1500, 280000, 1, 0.60, 2.80};
-        if (t == 6)
-            return {8, 0.024, 0.038, 0.95, 0.0180, 2500, 280000, 1, 0.68, 5.00};
+        if (originalTier() == 4)
+            return {6, 0.015, 0.024, 0.66, 0.0110, 760, 280000, 1, 0.52, 2.30};
 
         return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     }
@@ -2373,13 +2279,8 @@ private:
     StarParams pairDiskParams() const
     {
 
-        int t = originalTier();
-        if (t == 4)
+        if (originalTier() == 4)
             return {8, 0.018, 0.029, 0.66, 0.0025, 90, 120000, 1, 0.28, 0.85};
-        if (t == 5)
-            return {8, 0.024, 0.038, 0.78, 0.0035, 90, 120000, 1, 0.30, 0.95};
-        if (t == 6)
-            return {8, 0.030, 0.045, 0.95, 0.0045, 90, 120000, 1, 0.34, 1.05};
 
         return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     }
@@ -3553,6 +3454,28 @@ private:
 
                 ++extra;
             }
+        }
+    }
+
+    void occlusionStarPass()
+    {
+        if (elapsed() > HParam_TimeBudgetSeconds - 2.0) return;
+        int R = nV < 100000 ? 192 : 96;
+        buildRasterImportance(R);
+        vector<pair<int,int>> order; order.reserve(nV);
+        for (int v=0; v<nV; ++v) {
+            if (vdead[v]) continue;
+            int visible=0, silhouette=0;
+            for (int fi: vfaces[v]) if (!fdead[fi]) { visible += facePix[fi]; silhouette += faceSil[fi]; }
+            bool unseen = TParam_OcclusionProfile == 1 ? (visible == 0 && silhouette == 0) : (visible <= 2 && silhouette == 0);
+            if (unseen) order.push_back({visible,v});
+        }
+        sort(order.begin(),order.end());
+        int cap=max(1,(int)(nV*0.006)), extra=0; double stop=HParam_TimeBudgetSeconds-0.75;
+        for (auto [visibility,v]:order) {
+            if (extra>=cap || elapsed()>stop || vdead[v]) break;
+            StarCandidate c=computeStarCandidate(v);
+            if (c.valid() && applyStarDelete(c.v,c.root)) { ++extra; ++accepted; }
         }
     }
 

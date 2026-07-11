@@ -31,7 +31,7 @@ printed to stdout.
 
 ## Batch submission and polling
 
-After evaluating each candidate locally in sequence, upload a batch of **4–6**
+After evaluating each candidate locally in sequence, upload a batch of exactly **2**
 immutable C++ sources and wait for all of them:
 
 ```sh

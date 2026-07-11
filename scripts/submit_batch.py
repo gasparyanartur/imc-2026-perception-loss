@@ -146,7 +146,7 @@ def _poll_batch(batch: dict, *, ids_file: Path, teamsecret: str,
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("files", nargs="+", type=Path,
-                        help="4–6 C++ source files")
+                        help="exactly 2 C++ source files")
     parser.add_argument("--family",
                         help="optional family label, recommended for filtering")
     parser.add_argument("--teamsecret", "--team-secret",
@@ -163,8 +163,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-wait", type=float, default=0,
                         help="optional timeout in seconds; default: wait forever")
     args = parser.parse_args(argv)
-    if not 4 <= len(args.files) <= 6:
-        parser.error("a batch must contain 4–6 source files")
+    if len(args.files) != 2:
+        parser.error("a batch must contain exactly 2 source files")
 
     ids_file = args.ids_file or (
         ROOT / "data/submission-batches" /

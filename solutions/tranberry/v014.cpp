@@ -1,9 +1,4 @@
-// Pineapple v183: v182 + T4 weld maxValence 16→20 + scanVertices 2800→3000.
-// Push T4 weld vertex scan budget and valence ceiling.
 #include <bits/stdc++.h>
-
-static constexpr double HParam_Pineapple_KeepRatio_UpTo400k = 0.025;
-static constexpr double HParam_Pineapple_KeepRatio_Huge = 0.028;
 
 using namespace std;
 
@@ -27,13 +22,13 @@ static constexpr double HParam_KeepRatio_UpTo45k = 0.16;
 
 static constexpr double HParam_KeepRatio_UpTo50k = 0.1;
 
-static constexpr double HParam_KeepRatio_UpTo400k = HParam_Pineapple_KeepRatio_UpTo400k;
+static constexpr double HParam_KeepRatio_UpTo400k = 0.025;
 
-static constexpr double HParam_KeepRatio_Huge = HParam_Pineapple_KeepRatio_Huge;
+static constexpr double HParam_KeepRatio_Huge = 0.032;
 
 static constexpr double HParam_QemCostCapCoeff = 0.0375;
 
-static constexpr int HParam_TailOriginalVertexThreshold = 1000000;
+static constexpr int HParam_TailOriginalVertexThreshold = 400000;
 
 static constexpr double HParam_TailBatchElapsedStart = 11.8;
 
@@ -67,6 +62,7 @@ static constexpr double HParam_VegaScoreGeomWeight = 0.0018;
 
 static constexpr double HParam_VegaC1 = (0.01 * 255.0) * (0.01 * 255.0);
 
+static constexpr int TParam_UnifiedPostOrder = 2;
 static constexpr double HParam_VegaC2 = (0.03 * 255.0) * (0.03 * 255.0);
 
 struct Vec3
@@ -254,103 +250,28 @@ public:
 public:
     void run()
     {
-
         readMesh();
-
-        if (nV <= 10)
-        {
-            writeMesh();
-            return;
-        }
-
+        if (nV <= 10) { writeMesh(); return; }
         startTime = chrono::steady_clock::now();
-
-        if (nV > 5000 && nV <= 50000)
-        {
+        bool screen = nV > 5000 && nV <= 50000;
+        if (screen) {
             runScreenCoreMid();
-            compact();
-            writeMesh();
-            return;
+        } else {
+            initScale(); buildConnectivity(); initFaceWeights(); initQueue(); collapseLoop();
         }
-
-        initScale();
-
-        buildConnectivity();
-
-        initFaceWeights();
-
-        initQueue();
-
-        collapseLoop();
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 0.95)
-        {
-
-            valenceWeldPass();
-        }
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 1.10)
-        {
-
-            pairDiskPass();
-        }
-
-        // Star-delete is disabled on the huge tier (T7): on very large, irregular
-
-        // meshes the time-gated retriangulation is nondeterministic and can cross a
-
-        // validity/Hausdorff edge on some judge runs. T7 gains little from it anyway
-
-        // (it is Hausdorff-capped, not flat-vertex-capped). Keep it for T2-T6.
-
-        if (nV <= HParam_TailOriginalVertexThreshold &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 1.0)
-        {
-
+        if (TParam_UnifiedPostOrder == 1 && HParam_EnableVegaSsimPass && elapsed() < HParam_TimeBudgetSeconds - 2.2)
+            vegaSsimStarPass();
+        if (elapsed() < HParam_TimeBudgetSeconds - 1.7)
             collapseInvisibleEdges();
-        }
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 0.88)
-        {
-
+        if (elapsed() < HParam_TimeBudgetSeconds - 1.25)
             valenceWeldPass();
-        }
-
-        if (elapsed() < HParam_TimeBudgetSeconds - 0.78)
-        {
-
+        if (elapsed() < HParam_TimeBudgetSeconds - 0.90)
             pairDiskPass();
-        }
-
-        if (HParam_EnableVegaSsimPass &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 0.65)
-        {
-
+        if (TParam_UnifiedPostOrder == 2 && HParam_EnableVegaSsimPass && elapsed() < HParam_TimeBudgetSeconds - 0.55)
             vegaSsimStarPass();
-        }
-
-        // Sharon v13: 2nd Vega pass (Cherry v24 style)
-
-        if (HParam_EnableVegaSsimPass &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 0.30)
-        {
-
-            vegaSsimStarPass();
-        }
-
-        if (HParam_EnableVegaSsimPass &&
-
-            elapsed() < HParam_TimeBudgetSeconds - 0.12)
-        {
-
-            vegaSsimStarPass();
-        }
-
+        if (elapsed() < HParam_TimeBudgetSeconds - 0.22)
+            valenceWeldPass();
         compact();
-
         writeMesh();
     }
 
@@ -2253,20 +2174,14 @@ private:
     bool weldTierEnabled() const
     {
 
-        int t = originalTier();
-        return t == 4 || t == 5 || t == 6;
+        return originalTier() == 4;
     }
 
     StarParams weldParams() const
     {
 
-        int t = originalTier();
-        if (t == 4)
-            return {20, 0.050, 0.060, 0.66, 0.0110, 3000, 280000, 1, 0.52, 2.30};
-        if (t == 5)
-            return {10, 0.020, 0.032, 0.80, 0.0150, 1500, 280000, 1, 0.60, 2.80};
-        if (t == 6)
-            return {8, 0.024, 0.038, 0.95, 0.0180, 2500, 280000, 1, 0.68, 5.00};
+        if (originalTier() == 4)
+            return {6, 0.015, 0.024, 0.66, 0.0110, 760, 280000, 1, 0.52, 2.30};
 
         return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     }
@@ -2373,13 +2288,8 @@ private:
     StarParams pairDiskParams() const
     {
 
-        int t = originalTier();
-        if (t == 4)
+        if (originalTier() == 4)
             return {8, 0.018, 0.029, 0.66, 0.0025, 90, 120000, 1, 0.28, 0.85};
-        if (t == 5)
-            return {8, 0.024, 0.038, 0.78, 0.0035, 90, 120000, 1, 0.30, 0.95};
-        if (t == 6)
-            return {8, 0.030, 0.045, 0.95, 0.0045, 90, 120000, 1, 0.34, 1.05};
 
         return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     }

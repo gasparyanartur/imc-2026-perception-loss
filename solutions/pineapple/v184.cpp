@@ -1,4 +1,5 @@
-// Pineapple v184: v177 + T4 weld maxSeconds 2.30 → 5.00. More T4 time.
+// Pineapple v184: v182 + T4 weld maxSeconds 2.30→5.00.
+// More wall-clock time per T4 weld round.
 #include <bits/stdc++.h>
 
 static constexpr double HParam_Pineapple_KeepRatio_UpTo400k = 0.025;
@@ -2261,7 +2262,7 @@ private:
 
         int t = originalTier();
         if (t == 4)
-            return {16, 0.035, 0.044, 0.66, 0.0110, 2800, 280000, 1, 0.52, 5.00};
+            return {16, 0.050, 0.060, 0.66, 0.0110, 2800, 280000, 1, 0.52, 5.00};
         if (t == 5)
             return {10, 0.020, 0.032, 0.80, 0.0150, 1500, 280000, 1, 0.60, 2.80};
         if (t == 6)

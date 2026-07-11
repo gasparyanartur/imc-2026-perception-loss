@@ -20,11 +20,10 @@ python3 scripts/evaluate_candidate.py "$@" | tee "$tmp_log"
 status="${PIPESTATUS[0]}"
 set -e
 
-result="$(grep -m1 '^RESULT=' "$tmp_log" | cut -d= -f2 || true)"
 rate="$(grep -m1 '^COMPRESSION_RATE=' "$tmp_log" | cut -d= -f2 || true)"
-label="${result:-error}"
+label="metrics"
 if [[ -n "$rate" ]]; then
-    label="${label,,}-compr-${rate}"
+    label="${label}-compr-${rate}"
 fi
 log_path="$outputs_dir/native-${timestamp}-${label}.txt"
 cp "$tmp_log" "$log_path"

@@ -6,9 +6,8 @@ need (topology, geometry, Hausdorff, six-view SSIM, IoU) as KEY=VALUE pairs.
 This script compiles the candidate, runs it on each dataset mesh, and
 collects the results.
 
-By default no threshold comparison is performed; the orchestrator just
-records every metric. Pass --strict to compare against the documented
-acceptance thresholds (SSIM >= 0.9, Hausdorff usage <= 100%, etc.).
+The orchestrator reports numbers only. It never applies acceptance thresholds
+or labels a candidate PASS/FAIL; Kattis is the sole acceptance oracle.
 """
 from __future__ import annotations
 
@@ -146,16 +145,13 @@ def coerce_numeric(metrics: dict[str, object]) -> dict[str, float | int | None]:
 
 
 def evaluate_one(candidate_cmd: list[str], original_path: Path,
-                 timeout: float, time_budget: float, evaluator_path: Path,
-                 strict: bool) -> dict:
+                 timeout: float, time_budget: float, evaluator_path: Path) -> dict:
     record: dict[str, object] = {
         "name": original_path.stem,
         "input": str(original_path),
-        "valid": True,
         "compression": 0.0,
         "seconds": None,
-        "note": "",
-        "strict_failures": [],
+        "error": "",
     }
     with tempfile.TemporaryDirectory(prefix="mesh-eval-") as tmp:
         output_path = Path(tmp) / "simplified.txt"
@@ -163,8 +159,7 @@ def evaluate_one(candidate_cmd: list[str], original_path: Path,
                                              output_path, timeout)
         record["seconds"] = seconds
         if not ok:
-            record["valid"] = False
-            record["note"] = message
+            record["error"] = message
             return record
         record["output_bytes"] = output_path.stat().st_size
         record["output_sha256"] = file_sha256(output_path)
@@ -176,16 +171,14 @@ def evaluate_one(candidate_cmd: list[str], original_path: Path,
         record["per_view"] = eval_metrics.get("per_view", [])
 
         if "evaluator_error" in eval_metrics:
-            record["valid"] = False
-            record["note"] = eval_metrics["evaluator_error"]
+            record["error"] = eval_metrics["evaluator_error"]
             return record
 
         m = record["metrics"]
         V_orig = int(m.get("ORIGINAL_VERTICES", 0) or 0)
         V_simp = int(m.get("SIMPLIFIED_VERTICES", 0) or 0)
         if V_orig <= 0 or V_simp <= 0:
-            record["valid"] = False
-            record["note"] = "evaluator produced zero-vertex result"
+            record["error"] = "evaluator produced zero-vertex result"
             return record
 
         record["tier"] = classify_tier(V_orig)
@@ -218,82 +211,37 @@ def evaluate_one(candidate_cmd: list[str], original_path: Path,
         record["fg_pixels_orig"] = int(m.get("FG_PIXELS_ORIG_SUM", 0) or 0)
         record["fg_pixels_simp"] = int(m.get("FG_PIXELS_SIMP_SUM", 0) or 0)
 
-        # Validity heuristics: reject if topology obviously broken.
-        invalid_reasons = []
-        if record["nonmanifold_edges"] > 0:
-            invalid_reasons.append(f"nonmanifold_edges={record['nonmanifold_edges']}")
-        if record["orientation_errors"] > 0:
-            invalid_reasons.append(f"orientation_errors={record['orientation_errors']}")
-        if record["degenerate_faces"] > 0:
-            invalid_reasons.append(f"degenerate_faces={record['degenerate_faces']}")
-        if V_simp > V_orig:
-            invalid_reasons.append("simplified has more vertices than original")
-        if record["boundary_edges"] > 0:
-            invalid_reasons.append(f"boundary_edges={record['boundary_edges']}")
-
-        if strict:
-            if record["final_ssim"] < DEFAULT_SSIM_THRESHOLD:
-                invalid_reasons.append(
-                    f"FinalSSIM={record['final_ssim']:.4f} < {DEFAULT_SSIM_THRESHOLD}"
-                )
-            if record["hausdorff_usage_pct"] > 100.0:
-                invalid_reasons.append(
-                    f"Hausdorff usage={record['hausdorff_usage_pct']:.1f}% > 100%"
-                )
-
-        over_budget = time_budget > 0 and seconds > time_budget
-        if over_budget:
-            invalid_reasons.append(f"over time budget {seconds:.2f}s > {time_budget:.2f}s")
-
-        record["strict_failures"] = invalid_reasons
-        record["valid"] = not invalid_reasons
-        record["note"] = "; ".join(invalid_reasons) if invalid_reasons else "ok"
     return record
 
 
-def print_report(records: list[dict], strict: bool) -> None:
+def print_report(records: list[dict]) -> None:
     width = 150
     print("=" * width)
-    print("IMC 2026 unified native evaluation")
+    print("IMC 2026 unified native metrics")
     print("=" * width)
-    header = (
-        f"{'scenario':<28} {'tier':<7} {'valid':<5} {'compr%':>8} "
-        f"{'SSIM':>7} {'Haus%':>7} {'IoU_N':>6} {'res':>4} "
-        f"{'secs':>6} {'finger':<10}  {'note'}"
-    )
-    print(header)
+    print(f"{'scenario':<28} {'tier':<7} {'compr%':>8} {'SSIM':>7} {'Haus%':>7} {'IoU_N':>6} {'NM':>4} {'Bnd':>4} {'Deg':>4} {'res':>4} {'secs':>6} {'finger':<10}")
     print("-" * width)
     for r in records:
-        valid = "PASS" if r["valid"] else "FAIL"
         ssim = r.get("final_ssim")
         haus = r.get("hausdorff_usage_pct")
         iou = r.get("normal_iou_avg")
         ssim_s = f"{ssim:.4f}" if ssim is not None else "-"
         haus_s = f"{haus:.1f}" if haus is not None else "-"
         iou_s = f"{iou:.3f}" if iou is not None else "-"
-        res = r.get("render_res")
-        res_s = str(res) if res else "-"
+        res_s = str(r.get("render_res") or "-")
         secs = r.get("seconds")
         secs_s = f"{secs:.2f}" if secs is not None else "-"
         finger = (r.get("output_sha256") or "-")[:8]
-        print(
-            f"{r['name']:<28} {r.get('tier','-'):<7} {valid:<5} "
-            f"{r.get('compression',0.0):8.4f} {ssim_s:>7} {haus_s:>7} {iou_s:>6} "
-            f"{res_s:>4} {secs_s:>6} {finger:<10}  {r.get('note','')}"
-        )
+        print(f"{r['name']:<28} {r.get('tier','-'):<7} {r.get('compression',0.0):8.4f} {ssim_s:>7} {haus_s:>7} {iou_s:>6} {r.get('nonmanifold_edges',0):4} {r.get('boundary_edges',0):4} {r.get('degenerate_faces',0):4} {res_s:>4} {secs_s:>6} {finger:<10}")
     print("-" * width)
     total = len(records)
-    passed = sum(1 for r in records if r["valid"])
-    if total > 0:
-        mean_compr = sum(float(r.get("compression", 0.0)) for r in records) / total
-    else:
-        mean_compr = 0.0
-    print(f"Scenarios passed : {passed} / {total}")
+    mean_compr = sum(float(r.get("compression", 0.0)) for r in records) / max(1, total)
+    mean_ssim = sum(float(r.get("final_ssim", 0.0)) for r in records) / max(1, total)
+    mean_haus = sum(float(r.get("hausdorff_usage_pct", 0.0)) for r in records) / max(1, total)
+    print(f"Scenarios measured: {total}")
     print(f"Mean compression : {mean_compr:.6f} %")
-    if strict:
-        print(f"Strict thresholds: SSIM >= {DEFAULT_SSIM_THRESHOLD}, Hausdorff usage <= 100%")
-    else:
-        print("Strict mode off: all reported metrics, no acceptance gate enforced")
+    print(f"Mean SSIM        : {mean_ssim:.6f}")
+    print(f"Mean Hausdorff % : {mean_haus:.6f}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -308,8 +256,6 @@ def main(argv: list[str] | None = None) -> int:
                         help="also evaluate data/stress (tiers 5/6)")
     parser.add_argument("--time-budget", type=float, default=DEFAULT_TIME_BUDGET)
     parser.add_argument("--solver-timeout", type=float, default=30.0)
-    parser.add_argument("--strict", action="store_true",
-                        help="apply documented SSIM and Hausdorff thresholds")
     parser.add_argument("--json", type=Path, help="write detailed records")
     args = parser.parse_args(argv)
 
@@ -341,20 +287,15 @@ def main(argv: list[str] | None = None) -> int:
     with tempfile.TemporaryDirectory(prefix="candidate-build-") as tmp:
         command = build_candidate(candidate, Path(tmp))
         records = [evaluate_one(command, path, args.solver_timeout,
-                                args.time_budget, evaluator_path, args.strict)
+                                args.time_budget, evaluator_path)
                    for path in inputs]
 
-    print_report(records, args.strict)
+    print_report(records)
     total = len(records)
-    passed = sum(1 for r in records if r["valid"])
     mean = (sum(float
 (r.get("compression", 0.0)) for r in records) / max(1, total))
-    print(f"RESULT={'PASS' if passed == total else 'FAIL'}")
     print(f"SCENARIOS_TOTAL={total}")
-    print(f"SCENARIOS_PASSED={passed}")
     print(f"COMPRESSION_RATE={mean:.6f}")
-    if args.strict:
-        print(f"NATIVE_SSIM_THRESHOLD={DEFAULT_SSIM_THRESHOLD:.6f}")
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(records, indent=2, allow_nan=True) + "\n")
