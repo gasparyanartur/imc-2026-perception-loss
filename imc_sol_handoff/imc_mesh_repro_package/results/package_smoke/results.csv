@@ -1,0 +1,3 @@
+compression,faces,final,hausdorff_sample_frac,input_f,input_v,manifold,min_depth,min_normal,min_view,reason,runtime,shape,solver,status,vertices
+0.7150947080648311,5832,0.99635988,0.0,20480,10242,True,0.999999996,0.992673036,0.996336516,ok,5.467691518999914,sphere_smooth,v23,ok,2918
+0.7168521773091193,5796,0.996346318,0.0,20480,10242,True,0.999999996,0.992642497,0.996321246,ok,7.8852847780000275,sphere_smooth,current,ok,2900

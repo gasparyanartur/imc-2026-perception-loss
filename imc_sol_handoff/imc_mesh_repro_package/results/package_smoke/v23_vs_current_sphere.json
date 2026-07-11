@@ -1,0 +1,63 @@
+{
+  "byte_identical": false,
+  "face_delta_second_minus_first": -36,
+  "first": {
+    "bad_edge_incidence_count": 0,
+    "bad_edge_orientation_count": 0,
+    "closed_oriented_manifold": true,
+    "connected_components": 1,
+    "duplicate_faces": 0,
+    "edge_incidence_ok": true,
+    "edge_orientation_ok": true,
+    "faces": 5832,
+    "finite_vertices": true,
+    "max_double_area": 0.008172711530255,
+    "min_double_area": 0.0017902038823441506,
+    "positive_area": true,
+    "reason": "ok",
+    "unused_vertices": 0,
+    "valid_indices": true,
+    "vertices": 2918
+  },
+  "first_proxy": {
+    "faces": 5832,
+    "final": 0.99635988,
+    "manifold": true,
+    "min_depth": 0.999999996,
+    "min_normal": 0.992673036,
+    "min_view": 0.996336516,
+    "reason": "ok",
+    "vertices": 2918
+  },
+  "first_sha256": "dce657adabc202a1753e73f52f34a967ff1e0e5d9c6cb6d4b3f9b788f39cc66f",
+  "second": {
+    "bad_edge_incidence_count": 0,
+    "bad_edge_orientation_count": 0,
+    "closed_oriented_manifold": true,
+    "connected_components": 1,
+    "duplicate_faces": 0,
+    "edge_incidence_ok": true,
+    "edge_orientation_ok": true,
+    "faces": 5796,
+    "finite_vertices": true,
+    "max_double_area": 0.009829270689257914,
+    "min_double_area": 0.0017902041305386065,
+    "positive_area": true,
+    "reason": "ok",
+    "unused_vertices": 0,
+    "valid_indices": true,
+    "vertices": 2900
+  },
+  "second_proxy": {
+    "faces": 5796,
+    "final": 0.996346318,
+    "manifold": true,
+    "min_depth": 0.999999996,
+    "min_normal": 0.992642497,
+    "min_view": 0.996321246,
+    "reason": "ok",
+    "vertices": 2900
+  },
+  "second_sha256": "991b35855cfc393c8721262aa7b9f8e004ac8bd0ae724dbaf9c20119e86b8d63",
+  "vertex_delta_second_minus_first": -18
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "shape": "sphere_smooth",
+    "solver": "v23",
+    "input_v": 10242,
+    "input_f": 20480,
+    "runtime": 5.467691518999914,
+    "status": "ok",
+    "vertices": 2918,
+    "faces": 5832,
+    "manifold": true,
+    "reason": "ok",
+    "final": 0.99635988,
+    "min_view": 0.996336516,
+    "min_normal": 0.992673036,
+    "min_depth": 0.999999996,
+    "hausdorff_sample_frac": 0.0,
+    "compression": 0.7150947080648311
+  },
+  {
+    "shape": "sphere_smooth",
+    "solver": "current",
+    "input_v": 10242,
+    "input_f": 20480,
+    "runtime": 7.8852847780000275,
+    "status": "ok",
+    "vertices": 2900,
+    "faces": 5796,
+    "manifold": true,
+    "reason": "ok",
+    "final": 0.996346318,
+    "min_view": 0.996321246,
+    "min_normal": 0.992642497,
+    "min_depth": 0.999999996,
+    "hausdorff_sample_frac": 0.0,
+    "compression": 0.7168521773091193
+  }
+]
