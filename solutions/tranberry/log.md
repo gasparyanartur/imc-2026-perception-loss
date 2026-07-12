@@ -68,3 +68,20 @@ runtime, and fingerprints.
 All reported topology counts for v011-v018 were zero. v017 improves
 `abc_00011084` to 74.9473% compression at 0.9824 SSIM and is the leading
 candidate for a future exact-two Kattis batch after the current job terminates.
+
+
+## Batches 5–20 — Pine composition and structural frontier
+
+- v023/v024 introduced transactional rendering and passed tests 1–6, but exposed the test-7 timing hazard.
+- v045 reproduced Pineapple v072 exactly and established the all-pass `90.254291` control. v046 established a deterministic 4% giant-tier exit at `90.054298`.
+- v047/v048 proved that the deterministic giant exit eliminates test-7 failures; both failed only test 4 (`PPPFPPP`).
+- v051/v052 blended future collapsibility into the global heap key. This reordered too much perceptual work and fell to `PFPFFPP`; global rank blending is rejected.
+- v053/v054 used future collapsibility only for edge-local endpoint/placement selection. Both remained all-pass at `90.054298`, proving the mechanism safe but target-limited.
+- v055/v056 composed edge-local selection with the 2.8% deterministic giant target. Both passed all seven at `90.254291`; test 7 is no longer the active failure source.
+- v057/v058 replaced greedy scheduling with neighbor-disjoint versus endpoint-disjoint collapse rounds. Official results were `PPFFPPP`/64.368120 and `PFFFFPP`/32.458893. Neighbor-disjointness is essential, but round scheduling still loses too much SSIM on tests 3–4.
+- v059/v060 persisted perceptual quadrics through memoryless rebuilds. They failed tests 3–4; generic history also failed test 5. Persistent QEM energy is not a substitute for direct image loss.
+- v061/v062 restored the transactional renderer with conservative tier-3 handling. Both passed all seven at `90.083522`.
+- v063/v064 composed that all-pass renderer architecture with the proven deterministic 2.8% giant target. Both scored **90.283515 (`PPPPPPP`)**, the current Tranberry champion. v064's deeper no-SSIM-drop local search was officially inert.
+- v065/v066 extend transactional rendering to tier 3, with v066 comparing directly to the original mesh. Batch 20 is in flight.
+
+Current belief: improvements require direct original-image-aware search that changes accepted official output. Global QEM reordering, conflict rounds, and persistent quadrics are rejected. Test 7 is protected by a deterministic early exit and must remain unchanged.

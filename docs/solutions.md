@@ -319,3 +319,22 @@ Remaining score improvement must come from post-pass behavior, MEMLESS
 strategy, tail batch aggressiveness, root nudge profile, anchor boost
 removal, and other tier-uniform changes. The 95 target may be
 unreachable within the existing screen-core skeleton.
+
+
+---
+
+## Tranberry family: transactional SSIM and collapsibility search
+
+**Status (2026-07-12):** current champion `solutions/tranberry/v063.cpp`, official `90.283515`, cases `PPPPPPP`.
+
+Tranberry started from Nebula and tested image-loss rank surrogates, future-collapsibility ranking, conflict-free collapse rounds, persistent perceptual quadrics, and full transactional six-view rendering. The successful architecture preserves Pine's tuned first-stage targets, uses renderer-verified transactions on medium tiers, and locks the giant tier to the deterministic 2.8% early-exit schedule.
+
+Confirmed findings:
+
+- Global future-collapsibility heap reweighting and endpoint-only conflict rounds destroy SSIM-sensitive official tiers.
+- Edge-local survivor/placement decisions are safe but score-neutral while fixed targets dominate.
+- Persistent weighted/history quadrics do not recover tests 3–4 after extra reduction.
+- Transactional rendering is all-pass and, when combined with the deterministic giant schedule, improves the official champion from `90.254291` to `90.283515`.
+- Test 7 must retain its deterministic early exit; renderer or tail phases must not be inserted before it.
+
+Active direction: extend direct original-mesh SSIM transactions to tier 3 and replace coarse whole-mesh bisection with local renderer-gated collapse selection, so image-safe collapses can be accumulated without spending future collapsibility.
