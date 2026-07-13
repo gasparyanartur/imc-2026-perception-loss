@@ -323,9 +323,26 @@ unreachable within the existing screen-core skeleton.
 
 ---
 
+## Durian family: algorithmic SSIM reference improvements
+
+**Status (2026-07-12):** current champion `solutions/durian/durian-v083.cpp`, official `90.433026`, cases `PPPPPPP`.
+
+Durian started from the screen-core / large-tier-transaction skeleton and focused on parameter tuning to push T5/T6 keep ratios to their safe limits (T5=0.024, T6=0.020). It then shifted to algorithmic improvements, adding local Vega SSIM-aware edge passes, SSIM-gated tail batches, and a T7 post-pass. These algorithmic additions pass all cases but do not yet improve the score at the current ratios.
+
+Confirmed findings:
+
+- T5 can be pushed to 0.024 and T6 to 0.020; tighter values fail cases 6 and 7 respectively.
+- Weld/pair-disk post-passes for T5/T6 break case 7.
+- Local current-vs-after SSIM guards (threshold 0.99992) are too strict and decoupled from the judge's original-vs-final metric.
+- Renderer-verified transactions for large tiers pass but do not find additional reduction at current ratios.
+
+Active direction: replace local-delta SSIM guards with original-mesh-reference SSIM guards so that collapses are accepted/rejected based on the actual judge metric.
+
+---
+
 ## Tranberry family: transactional SSIM and collapsibility search
 
-**Status (2026-07-12):** current champion `solutions/tranberry/v063.cpp`, official `90.283515`, cases `PPPPPPP`.
+**Status (2026-07-12):** previous champion `solutions/tranberry/v063.cpp`, official `90.283515`, cases `PPPPPPP`; superseded by Durian v083 at `90.433026`.
 
 Tranberry started from Nebula and tested image-loss rank surrogates, future-collapsibility ranking, conflict-free collapse rounds, persistent perceptual quadrics, and full transactional six-view rendering. The successful architecture preserves Pine's tuned first-stage targets, uses renderer-verified transactions on medium tiers, and locks the giant tier to the deterministic 2.8% early-exit schedule.
 
@@ -334,7 +351,33 @@ Confirmed findings:
 - Global future-collapsibility heap reweighting and endpoint-only conflict rounds destroy SSIM-sensitive official tiers.
 - Edge-local survivor/placement decisions are safe but score-neutral while fixed targets dominate.
 - Persistent weighted/history quadrics do not recover tests 3–4 after extra reduction.
-- Transactional rendering is all-pass and, when combined with the deterministic giant schedule, improves the official champion from `90.254291` to `90.283515`.
+- Transactional rendering is all-pass and, when combined with the deterministic giant schedule, improved the official champion from `90.254291` to `90.283515`; the Durian v097 transfer then raised it to `90.433026`.
 - Test 7 must retain its deterministic early exit; renderer or tail phases must not be inserted before it.
 
 Active direction: extend direct original-mesh SSIM transactions to tier 3 and replace coarse whole-mesh bisection with local renderer-gated collapse selection, so image-safe collapses can be accumulated without spending future collapsibility.
+
+
+---
+
+## Bucket 11: Local surface-sample reprojection energy
+
+**Idea:** Attach deterministic area-weighted original-surface samples to each collapse cluster. For every candidate collapse, penalize tangential displacement between the merged vertex/patch and those samples, and carry the sample moments forward through later collapses. This approximates Hoppe-style local distance energy and preserves triangle coverage that plane-only QEM cannot see.
+
+**Status:** Rejected by Tranberry v083/v084 (`PPFFFFF`); local sample fidelity did not generalize to official meshes.
+
+**Rationale and evidence:** QEM, visibility quadrics, and whole-image thresholds have reached an official 90.433026 plateau. Weighted quadrics can strand collapses, while renderer gates either accept an unsafe whole target or fall back. A carried surface-sample moment directly addresses future collapsibility and flat-normal/depth coverage without changing the topology or Hausdorff oracle.
+
+**Planned experiments:**
+
+- Edge-local sample-moment placement with the raw QEM heap and unchanged targets.
+- A bounded Pareto placement variant that chooses among QEM optimum, endpoints, midpoint, and sample centroid, then spends demonstrated fidelity margin only after official evidence.
+
+---
+
+## Bucket 12: Perspective view-ray silhouette quadrics
+
+**Idea:** Replace isotropic point anchors on rendered silhouette vertices with the first-order perspective image metric: penalize motion perpendicular to each visible camera ray while leaving motion along the ray free. This directly preserves projected vertex position without unnecessarily freezing depth, and can be composed with the existing surface-plane QEM.
+
+**Status:** In progress in Tranberry v089/v090. v089 changes medium fingerprints while retaining 95.365420 local compression, slightly improving mean SSIM, Hausdorff, and normal overlap; the giant stress output remains fingerprint-identical to v072.
+
+**Next test:** Extend the same directional anchor to tier 3, the hidden regime believed to be SSIM-limited, and use official evidence to decide whether the freed depth degree of freedom supports structurally deeper simplification.

@@ -84,4 +84,38 @@ candidate for a future exact-two Kattis batch after the current job terminates.
 - v063/v064 composed that all-pass renderer architecture with the proven deterministic 2.8% giant target. Both scored **90.283515 (`PPPPPPP`)**, the current Tranberry champion. v064's deeper no-SSIM-drop local search was officially inert.
 - v065/v066 extend transactional rendering to tier 3, with v066 comparing directly to the original mesh. Batch 20 is in flight.
 
-Current belief: improvements require direct original-image-aware search that changes accepted official output. Global QEM reordering, conflict rounds, and persistent quadrics are rejected. Test 7 is protected by a deterministic early exit and must remain unchanged.
+Current belief: improvements require direct original-image-aware search that changes accepted official output. Durian transfer established v072 at 90.433026 PPPPPPP; preserve its full code layout because exact v083 replay failed test 7 while v097 replay passed./ Global QEM reordering, conflict rounds, and persistent quadrics are rejected. Test 7 is protected by a deterministic early exit and must remain unchanged.
+
+
+## Durian transfer — v071-v072
+
+Durian's v083/v097 work was replayed as Tranberry v071/v072. Both measured 95.365420 locally with zero topology defects and 98% compression on the 1.1M stress mesh. Officially, however, exact v083 replay v071 failed test 7 (`PPPPPPF`, 74.099686), while v097 replay v072 passed all seven at **90.433026**. v072 is the current Tranberry champion.
+
+This is strong timing/layout evidence: medium-tier-only original-reference code can change giant-tier behavior even when its pass is never invoked there. Therefore future Tranberry work must retain v072's complete translation-unit layout and deterministic giant path, not merely copy its numeric keep ratios. Durian v099/v100 confirm threshold/cap expansion is score-inert; v101's large-tier view-weight architecture remains pending.
+
+## Structural batches 24–29 — weighting, transactions, samples, planar deletion
+
+- v073/v074 made raster importance persistent or adaptive in the main QEM and regressed broadly (`PPPFPFP` / `PPPFPFF`). Persistent view energy strands collapsibility and can disturb test 7.
+- v075/v076 used visibility-aware feasibility and priority; neither protected test 6, and the broader variant also failed test 7.
+- v079/v080 wrapped the full tier-5 continuation against an absolute original-image floor; both failed test 6. v081/v082 changed this to relative/minimax damage guards and restored `PPPPPPP`, but scored 90.421048/90.420959, slightly below v072.
+- v083/v084 carried original surface sample moments through collapses. Despite plausible local metrics, both failed tests 3–7 (`PPFFFFF`); sample-centroid preservation is badly misaligned with the judge render.
+- v085/v086 added exact coplanar star deletion with sequential and independent scheduling. Both were locally fingerprint-identical to v072 and officially `90.433026 PPPPPPP`; strict exact-planar deletion is safe but inert on hidden meshes.
+
+Current champion remains v072 at 90.433026. The next experiments replace geometry-only placement with signed-volume and perspective screen-space quadrics while retaining the v072 large-tier runtime path.
+
+## Batch 30 and local v089-v098 — volume rejected, screen Jacobians promising
+
+- v087 weak medium-only signed-volume placement was officially score-neutral/all-pass at 90.433026. v088 extended the stronger constraint across screen tiers and failed test 4 (`PPPFPPP`, 76.182865). Volume preservation is rejected for sensitive medium geometry.
+- v089/v090 replace isotropic silhouette anchors with perspective view-ray tangent quadrics while leaving the large/T7 runtime branch untouched. v089 retains 95.365420 local compression with changed medium fingerprints and tiny SSIM/Hausdorff gains; Batch 31 is in flight.
+- v091/v092 use the exact perspective projection Jacobian rather than an angular tangent approximation. Local compression remains 95.365420; Hausdorff use improves and giant stress output stays fingerprint-identical.
+- v095/v096 carry the camera Jacobian through collapse clusters and memoryless rebuilds. v095 raises the hardest proxy from about 0.9920 to 0.9922 SSIM at identical compression.
+- v097/v098 combine persistent screen memory with deeper isolated medium continuations. v097 reaches about 0.9923 on the hard proxy at the same local vertex count; hidden tier-3 evidence remains decisive.
+
+## Local v099-v110 — render-channel decomposition and cost separation
+
+- v099/v100 add analytic unit-normal Jacobians. Both underperform pixel-only screen Jacobians locally, indicating face-plane QEM already captures most normal constraints; this branch is rejected.
+- v101 adds a camera-depth derivative to the pixel Jacobian. It raises the hard proxy to 0.9927 SSIM but stops earlier (95.315860 mean compression) because perceptual error feeds the collapse cap. v102 persistence restores compression but loses most fidelity gain.
+- v103/v104 separate perceptual placement from geometry scheduling and improve local mean SSIM/compression, but accidentally apply the new geometry scheduler to T5/T6/T7; the T7 fingerprint changes and runtime approaches 18s, so these forms are explicitly not submission candidates.
+- v105/v106 correct the scope to screen tiers 2–3. v105 is the best local Pareto point: 95.365420 compression, 0.890177 mean SSIM, hard proxy 0.9924, and exact v072 T7 fingerprint/runtime path. Persistence is slightly worse.
+- v107 deeper tier-2 staging enters a safer but less collapsible basin (hard proxy 0.9932 but only 79.8786% reduction there). v108 isolates the hidden tier-3 schedule.
+- v109 render-ranked queue selection reproduces the high-fidelity/lower-compression behavior of v101. Perceptual placement with geometry ordering (v105) is better than perceptual ordering.

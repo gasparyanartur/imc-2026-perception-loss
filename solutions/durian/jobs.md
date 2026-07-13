@@ -63,3 +63,224 @@
 ### 2026-07-11 23:38 UTC — Batch 14 (v033, v034) - IN FLIGHT
 - v033: v002 + T2 0.30 (tightening)
 - v034: v002 + T3 0.15 (tightening)
+
+
+### 2026-07-12 23:29 UTC — Batch 58 (v139, v140) — IN FLIGHT
+- v139: v131 + CParam_HausdorffDiagFraction 0.055
+- v140: v131 + CParam_HausdorffDiagFraction 0.0575
+- Local eval: v139 94.64% / 0.854 SSIM; v140 94.73% / 0.851 SSIM
+- Batch file: `data/submission-batches/batch-20260712-232939.json`
+- Submission IDs: d59e9644-9472-45e2-9c86-9777849ec0d2, 29b7d613-49b9-49b4-b770-e89d604cfd56
+
+
+### 2026-07-12 23:26 UTC — Batch 57 (v137, v138) — IN FLIGHT
+- v137: v131 + absoluteQemEndgame minSafe 0.910
+- v138: v131 + absoluteQemEndgame minSafe 0.930
+- Local eval: both 94.79% compression
+- Batch file: `data/submission-batches/batch-20260712-232601.json`
+- Submission IDs: ddccda3c-e68a-49f7-9aa4-7971173dc3e7, f18d5c8e-4a1b-4f69-9172-f5bbd44d8abc
+
+
+### 2026-07-12 23:21 UTC — Batch 56 (v135, v136) — IN FLIGHT
+- v135: v131 + CParam_HausdorffDiagFraction 0.0625
+- v136: v131 + CParam_HausdorffDiagFraction 0.0675
+- Local eval: v135 94.88% / 0.846 SSIM; v136 94.93% / 0.841 SSIM
+- Batch file: `data/submission-batches/batch-20260712-232141.json`
+- Submission IDs: 05f4cb28-3419-4b26-a3c0-27eb5cb938d7, 5d39a28c-6011-457c-a2e0-9643c08d53b0
+
+
+### 2026-07-12 23:17 UTC — Batch 55 (v133, v134) — IN FLIGHT
+- v133: v131 + CParam_HausdorffDiagFraction 0.065
+- v134: v131 + CParam_HausdorffDiagFraction 0.07
+- Local eval: v133 94.94% / 0.841 SSIM; v134 94.97% / 0.830 SSIM
+- Batch file: `data/submission-batches/batch-20260712-231750.json`
+- Submission IDs: e404bb2b-aa5c-4876-bf05-48e36f40ad88, efcf30b8-f185-4c5c-b006-d4d0e816730c
+
+
+### 2026-07-12 23:14 UTC — Batch 54 (v131, v132) — IN FLIGHT
+- v131: v119 + CParam_HausdorffDiagFraction 0.06 (higher compression, lower SSIM locally)
+- v132: v119 + CParam_HausdorffDiagFraction 0.05 (lower compression, higher SSIM locally)
+- Local eval: v131 94.79% / 0.847 SSIM; v132 94.42% / 0.865 SSIM
+- Batch file: `data/submission-batches/batch-20260712-231423.json`
+- Submission IDs: 78b7ae75-4a1d-4f45-8610-677fc137ef9a, dfb47a6c-763e-4435-b963-7f59178cbd07
+
+
+### 2026-07-12 23:10 UTC — Batch 53 (v129, v130) — IN FLIGHT
+- v129: v119 + T5 keepRatio 0.0238
+- v130: v119 + T6 keepRatio 0.0198
+- Local eval: both 94.64% compression
+- Batch file: `data/submission-batches/batch-20260712-231045.json`
+- Submission IDs: fd7e90d4-aff9-4abd-a3d6-6ebe7f476e93, b6129c7e-0568-44ed-bc13-6f73c854f6aa
+
+
+### 2026-07-12 23:06 UTC — Batch 52 (v127, v128) — IN FLIGHT
+- v127: v119 + HParam_QemCostCapCoeff 0.05
+- v128: v119 + HParam_QemCostCapCoeff 0.025
+- Local eval: both 94.64% compression
+- Batch file: `data/submission-batches/batch-20260712-230628.json`
+- Submission IDs: f3e9d111-e0d2-4728-a4bb-54675bcca0a8, c4c08ca8-d93d-4049-b726-af32f959ae25
+
+
+### 2026-07-12 23:02 UTC — Batch 51 (v125, v126) — IN FLIGHT
+- v125: v119 + vegaSsimEdgePass original-reference threshold 0.9990
+- v126: v119 + vegaSsimEdgePass scan 4800 and cap 400
+- Local eval: both 94.64% compression
+- Batch file: `data/submission-batches/batch-20260712-230242.json`
+- Submission IDs: 52bfab20-9dd0-48a3-8a86-c0ffada8f062, 90652392-445d-4be5-be2c-9c68b67c71de
+
+
+### 2026-07-12 22:57 UTC — Batch 50 (v123, v124) — IN FLIGHT
+- v123: v119 + absoluteQemEndgame minSafe 0.910
+- v124: v119 + absoluteQemEndgame minSafe 0.930
+- Local eval: both 94.64% compression
+- Batch file: `data/submission-batches/batch-20260712-225755.json`
+- Submission IDs: 6e0b2f4b-0923-4d51-bff8-86d4ca07c547, ca9cdc57-edbc-4318-a568-4c62f6598ec6
+
+
+### 2026-07-12 22:53 UTC — Batch 49 (v121, v122) — IN FLIGHT
+- v121: v119 + absoluteQemEndgame T2 0.120, T3/T4 0.055, 7 iterations
+- v122: v119 + absoluteQemEndgame T2 0.115, T3/T4 0.050, 7 iterations
+- Local eval: v121 94.63% compression; v122 94.63% compression
+- Batch file: `data/submission-batches/batch-20260712-225351.json`
+- Submission IDs: 21fcfe65-c88e-483a-b28e-97a05992ecdb, 32cf0dae-7df4-4967-a644-41a54e5d9faa
+
+
+### 2026-07-12 22:46 UTC — Batch 48 (v119, v120) — IN FLIGHT
+- v119: v115 + 7 binary-search iterations
+- v120: v115 + relax time guard to 0.50s
+- Local eval: v119 94.64% compression (new best); v120 94.63% compression
+- Batch file: `data/submission-batches/batch-20260712-224647.json`
+- Submission IDs: 57e3c52d-8f91-469c-8414-9116cf7f93e8, d9c87bf0-ce62-4df9-aa8f-2500c53f80a1
+
+
+### 2026-07-12 22:43 UTC — Batch 47 (v117, v118) — IN FLIGHT
+- v117: v115 + absoluteQemEndgame T2 0.115, T3/T4 0.050
+- v118: v115 + absoluteQemEndgame T2 0.110, T3/T4 0.045
+- Local eval: v117 94.61% compression; v118 94.60% compression
+- Batch file: `data/submission-batches/batch-20260712-224306.json`
+- Submission IDs: 260ad598-869a-4167-825a-82c333859c34, 2784999b-f1f8-4a0f-95fc-c27d72906339
+
+
+### 2026-07-12 22:39 UTC — Batch 46 (v115, v116) — IN FLIGHT
+- v115: v113 + absoluteQemEndgame T2 0.125, T3/T4 0.060
+- v116: v113 + absoluteQemEndgame T2 0.120, T3/T4 0.055
+- Local eval: v115 94.63% compression (new best); v116 94.61% compression
+- Batch file: `data/submission-batches/batch-20260712-223916.json`
+- Submission IDs: b7dbab82-bb6e-4efa-92ea-6e188140d6c3, e8ba5a88-0c59-4043-939f-76fd436aafb4
+
+
+### 2026-07-12 22:34 UTC — Batch 45 (v113, v114) — IN FLIGHT
+- v113: v107 + 6 binary-search iterations (T2 0.13, T3/T4 0.065)
+- v114: v107 + relax time guard to 0.80s
+- Local eval: v113 94.62% compression (new best); v114 94.60% compression
+- Batch file: `data/submission-batches/batch-20260712-223440.json`
+- Submission IDs: 4f86fc19-9ba3-4e09-a310-8f04225ae83a, e6ab4816-bc14-46e5-868c-720183134c67
+
+
+### 2026-07-12 22:30 UTC — Batch 44 (v111, v112) — IN FLIGHT
+- v111: v105 + 6 binary-search iterations in absoluteQemEndgame
+- v112: v105 + relax absoluteQemEndgame time guard to 0.80s
+- Local eval: v111 94.55% compression; v112 94.53% compression
+- Batch file: `data/submission-batches/batch-20260712-223030.json`
+- Submission IDs: a39d87aa-9360-4d0b-a516-d714a5a6cd04, abbe9b04-1da2-460a-90e9-34c94bddd68b
+
+
+### 2026-07-12 22:25 UTC — Batch 43 (v109, v110) — IN FLIGHT
+- v109: v105 + absoluteQemEndgame T2 0.135, T3/T4 0.072
+- v110: v105 + absoluteQemEndgame T2 0.145, T3/T4 0.068
+- Local eval: v109 94.57% compression; v110 94.45% compression
+- Batch file: `data/submission-batches/batch-20260712-222559.json`
+- Submission IDs: 99fcb47e-e3b0-4806-9eb7-194c530fc943, 50a158f2-f790-4a83-816b-b201848fa803
+
+
+### 2026-07-12 22:16 UTC — Batch 41 (v105, v106) — COMPLETE
+- v105: v097 + absoluteQemEndgame bounds T2 0.14/T3/T4 0.07, 5 iters — PPPPPPP 90.433026
+- v106: v105 + runScreenCoreMid T2 0.28/T3 0.125 — PPFFPPP 64.515983
+- Batch file: `data/submission-batches/batch-20260712-221638.json`
+- Submission IDs: 2ce7c3af-88d0-4a53-873c-8adf706c40cf, 77525ba6-73ea-4d02-bc3f-147e265ad2a3
+
+
+### 2026-07-12 22:21 UTC — Batch 42 (v107, v108) — IN FLIGHT
+- v107: v105 + absoluteQemEndgame lower bounds T2 0.13, T3/T4 0.065
+- v108: v105 + runScreenCoreMid T2 targets {0.30,0.28,0.26}
+- Local eval: v107 94.60% compression; v108 94.54% compression
+- Batch file: `data/submission-batches/batch-20260712-222123.json`
+
+
+### 2026-07-12 22:16 UTC — Batch 41 (v105, v106) — IN FLIGHT
+- v105: v097 + absoluteQemEndgame lower bounds tightened (T2 0.14, T3/T4 0.07), 5 iterations
+- v106: v105 + runScreenCoreMid targets tightened (T2 final 0.28, T3 final 0.125)
+- Local eval: v105 94.53% compression / 0.854 SSIM; v106 94.49% compression / 0.854 SSIM (first local improvement over 94.29% baseline)
+- Batch file: `data/submission-batches/batch-20260712-221638.json`
+- Submission IDs: 2ce7c3af-88d0-4a53-873c-8adf706c40cf, 77525ba6-73ea-4d02-bc3f-147e265ad2a3
+
+
+### 2026-07-12 22:04 UTC — Batch 40 (v103, v104) — COMPLETE
+- v103: v101 but raster-importance weights only for T5 (50k–400k) — PPPPPPP 90.420871
+- v104: v103 + T5 keepRatio 0.0235 — PPPPPFP 74.153497
+- Local eval: both 94.29% compression, 0.854 SSIM on ppsurf
+- Batch file: `data/submission-batches/batch-20260712-220433.json`
+- Submission IDs: 68994580-6836-4eb0-b5b1-3769d8ced602, 76fa3789-4bbc-4e63-8a30-b7764d2106bc
+
+
+### 2026-07-12 22:04 UTC — Batch 40 (v103, v104) — IN FLIGHT
+- v103: v101 but raster-importance weights only for T5 (50k–400k)
+- v104: v103 + T5 keepRatio 0.0235
+- Local eval: both 94.29% compression, 0.854 SSIM on ppsurf
+- Batch file: `data/submission-batches/batch-20260712-220433.json`
+- Submission IDs: 68994580-6836-4eb0-b5b1-3769d8ced602, 76fa3789-4bbc-4e63-8a30-b7764d2106bc
+
+
+### 2026-07-12 21:27 UTC — Batch 39 (v101, v102) — COMPLETE
+- v101: v097 + raster importance weights for T5/T6/T7 main QEM — PPPPPPF 74.087532
+- v102: v101 + T6 keepRatio 0.0195 — PPPPPPF 74.099686
+- Local eval: both 94.29% compression, 0.854 SSIM on ppsurf
+- Batch file: `data/submission-batches/batch-20260712-212701.json`
+- Submission IDs: ae3a8a51-e06e-4f7f-b639-1e0cd2651463, b7373216-e9c7-46e6-ae51-d9a4b50c1a74
+
+
+### 2026-07-12 21:27 UTC — Batch 39 (v101, v102) — IN FLIGHT
+- v101: v097 + view-dependent face weights for large tiers (build raster importance at R=256 before main QEM)
+- v102: v101 + T6 keepRatio 0.0195
+- Local eval: both 94.29% compression, 0.854 SSIM on ppsurf
+- Batch file: `data/submission-batches/batch-20260712-212701.json`
+- Submission IDs: ae3a8a51-e06e-4f7f-b639-1e0cd2651463, b7373216-e9c7-46e6-ae51-d9a4b50c1a74
+
+
+### 2026-07-12 21:17 UTC — Batch 38 (v099, v100) — COMPLETE
+- v099: v097 + original-reference threshold 0.9990, cap 400 — PPPPPPP 90.433026
+- v100: v097 + original-reference threshold 0.9995, scan 4800, cap 400 — PPPPPPP 90.433026
+- Local eval: both 94.29% compression, 0.854 SSIM on ppsurf
+- Batch file: `data/submission-batches/batch-20260712-211702.json`
+- Submission IDs: 844f5f1d-b7f5-475b-a251-4bd14dcd5bb9, c9e9f15e-e13c-4ea0-947d-e3d0e7c7f3fe
+
+
+### 2026-07-12 21:17 UTC — Batch 38 (v099, v100) — IN FLIGHT
+- v099: v097 + original-reference threshold 0.9990, cap 400
+- v100: v097 + original-reference threshold 0.9995, scan 4800, cap 400
+- Local eval: both 94.29% compression, 0.854 SSIM on ppsurf (identical profile)
+- Batch file: `data/submission-batches/batch-20260712-211702.json`
+
+
+### 2026-07-12 21:12 UTC — Batch 37 (v097, v098) — IN FLIGHT
+- v097: vegaSsimEdgePass uses original-mesh reference for medium tiers (full-view render once per pass), threshold 0.9995
+- v098: vegaSsimEdgePass at higher patch resolution 768 px (with v096 looser threshold)
+- Local eval: both 94.29% compression, ~0.854 SSIM on ppsurf (identical profile)
+- Batch file: `data/submission-batches/batch-20260712-211202.json`
+- Submission IDs: 786796b5-e27c-4b7c-97cf-deebfd4c5c28, 50c85a77-3d4d-45d6-b116-80d54f4189eb
+
+
+### 2026-07-12 21:00 UTC — Batch 36 (v095, v096) — COMPLETE
+- v095: vegaSsimEdgePass threshold 0.99950, scan 3600, cap 300 — PPPPPPP 90.433026
+- v096: vegaSsimEdgePass threshold 0.99900, scan 5000, cap 500 — PPPPPPP 90.433026
+- Local eval: both 94.29% compression, 0.854 SSIM on ppsurf (identical to baseline local profile)
+- Batch file: `data/submission-batches/batch-20260712-210045.json`
+- Submission IDs: e12731f7-076c-4e89-8a42-04c05fe9b17e, 02c20887-7ee2-4bdf-b641-95597955edaf
+
+
+### 2026-07-12 21:00 UTC — Batch 36 (v095, v096) — IN FLIGHT
+- v095: vegaSsimEdgePass threshold 0.99950, scan 3600, cap 300
+- v096: vegaSsimEdgePass threshold 0.99900, scan 5000, cap 500
+- Local eval: both 94.29% compression, 0.854 SSIM on ppsurf (identical to baseline local profile)
+- Batch file: `data/submission-batches/batch-20260712-210045.json`
+- Submission IDs: e12731f7-076c-4e89-8a42-04c05fe9b17e, 02c20887-7ee2-4bdf-b641-95597955edaf

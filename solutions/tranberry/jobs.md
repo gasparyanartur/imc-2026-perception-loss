@@ -256,3 +256,134 @@ status. Detailed hypotheses and post-mortems remain in `log.md`.
     - Terminal: score `90.283515`, cases `PPPPPPP`
   - `solutions/tranberry/v068.cpp` — `fd4cc7a9-3723-494a-8f00-eaa75aefb564`
     - Terminal: score `90.283515`, cases `PPPPPPP`
+
+## Batch 22 — v069-v070
+
+- Launched: 2026-07-12 23:20 local time
+- State: terminal
+- Finished: 2026-07-12 23:22 local time
+- Batch file: `data/submission-batches/batch-20260712-212024.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v069.cpp` — `7c206e7e-4de6-45f0-802e-0f25b1a1478b`
+    - Terminal: score `90.283515`, cases `PPPPPPP`
+  - `solutions/tranberry/v070.cpp` — `e22e1f67-ab8a-4cbe-8863-e31706491483`
+    - Terminal: score `90.283515`, cases `PPPPPPP`
+
+## Batch 23 — v071-v072
+
+- Launched: 2026-07-12 23:25 local time
+- State: terminal
+- Finished: 2026-07-12 23:28 local time
+- Batch file: `data/submission-batches/batch-20260712-212540.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v071.cpp` — `78d773ce-2667-4048-9da0-23f7c60bb2a2`
+    - Terminal: score `74.099686`, cases `PPPPPPF`
+  - `solutions/tranberry/v072.cpp` — `321d3d84-231f-492f-acde-565b2d01cc18`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+
+## Batch 24 — v073-v074
+
+- Launched: 2026-07-12 23:35 local time
+- State: terminal
+- Finished: 2026-07-12 23:43 local time
+- Batch file: `data/submission-batches/batch-20260712-213539.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v073.cpp` — `5bd3fb4d-22fb-4be5-94e8-4fdb200cc09a`
+    - Terminal: score `59.903336`, cases `PPPFPFP`
+  - `solutions/tranberry/v074.cpp` — `01742aa2-77f9-4ccb-8d38-616553e9ec9f`
+    - Terminal: score `43.569997`, cases `PPPFPFF`
+
+## Batch 25 — v075-v076
+
+- Launched: 2026-07-12 23:43 local time
+- State: terminal
+- Finished: 2026-07-12 23:50 local time
+- Batch file: `data/submission-batches/batch-20260712-214357.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v075.cpp` — `107c3f97-486d-4383-9991-492548e25238`
+    - Terminal: score `74.153497`, cases `PPPPPFP`
+  - `solutions/tranberry/v076.cpp` — `a915a37a-7a12-4e5d-a316-e731eb36f849`
+    - Terminal: score `57.820157`, cases `PPPPPFF`
+
+## Batch 26 — v079-v080
+
+- Launched: 2026-07-12 23:56 local time
+- State: terminal
+- Finished: 2026-07-13 00:00 local time
+- Batch file: `data/submission-batches/batch-20260712-215618.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v079.cpp` — `2a3c1c09-b19d-47f2-98f4-af9dd4b05926`
+    - Terminal: score `74.153497`, cases `PPPPPFP`
+  - `solutions/tranberry/v080.cpp` — `cc58be36-f2c1-4c42-965c-d43d98a739aa`
+    - Terminal: score `74.153497`, cases `PPPPPFP`
+
+## Batch 27 — v081-v082
+
+- Launched: 2026-07-13 00:04 local time
+- State: terminal
+- Finished: 2026-07-13 00:06 local time
+- Batch file: `data/submission-batches/batch-20260712-220425.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v081.cpp` — `7618e57c-79c9-4e9a-a760-c60a83ff5a26`
+    - Terminal: score `90.421048`, cases `PPPPPPP`
+  - `solutions/tranberry/v082.cpp` — `0126c028-bd9d-4a41-a527-35b79fecb409`
+    - Terminal: score `90.420959`, cases `PPPPPPP`
+
+## Batch 28 — v083-v084
+
+- Launched: 2026-07-13 00:14 local time
+- State: terminal
+- Finished: 2026-07-13 00:18 local time
+- Batch file: `data/submission-batches/batch-20260712-221437.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v083.cpp` — `06d5653b-5bb3-4f69-80ab-05aebb49ad8d`
+    - Terminal: score `16.499919`, cases `PPFFFFF`
+  - `solutions/tranberry/v084.cpp` — `9eaac6c1-5018-4ec4-bc5c-0101709ff96d`
+    - Terminal: score `16.503986`, cases `PPFFFFF`
+
+## Batch 29 — v085-v086
+
+- Launched: 2026-07-13 00:23 local time
+- State: terminal
+- Finished: 2026-07-13 00:36 local time
+- Batch file: `data/submission-batches/batch-20260712-222335.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v085.cpp` — `80b6c5f4-5cca-463a-a4ab-3578fd2816d5`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+  - `solutions/tranberry/v086.cpp` — `5fb38eed-0bbf-4122-be48-7cf43ef4492d`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+
+## Batch 30 — v087-v088
+
+- Launched: 2026-07-13 00:36 local time
+- State: terminal
+- Finished: 2026-07-13 01:05 local time
+- Batch file: `data/submission-batches/batch-20260712-223654.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v087.cpp` — `cc9dea81-84e8-41bf-8680-350c06e5156a`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+  - `solutions/tranberry/v088.cpp` — `f8bc1a21-82d3-41b4-b814-41f8c22ad769`
+    - Terminal: score `76.182865`, cases `PPPFPPP`
+
+## Batch 31 — v089-v090
+
+- Launched: 2026-07-13 01:06 local time
+- State: terminal
+- Finished: 2026-07-13 01:46 local time
+- Batch file: `data/submission-batches/batch-20260712-230625.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v089.cpp` — `8d271665-afb9-4698-a87d-ffa4961aaebf`
+    - Terminal: score `78.766143`, cases `PPFPPPP`
+  - `solutions/tranberry/v090.cpp` — `aeff56ca-6717-4889-80cc-032439609bc9`
+    - Terminal: score `64.515983`, cases `PPFFPPP`
+
+## Batch 32 — v091-v092
+
+- Launched: 2026-07-13 01:47 local time
+- State: in flight
+- Batch file: `data/submission-batches/batch-20260712-234743.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v091.cpp` — `1b205fcd-17eb-410a-ad9b-690722c8f1a4`
+    - Pending
+  - `solutions/tranberry/v092.cpp` — `365f8fea-8fdc-4d5f-9e53-6ad6f8c2d07e`
+    - Pending

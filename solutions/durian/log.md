@@ -483,3 +483,99 @@ T6 can go much lower than expected! T6=0.024 safe.
 | durian-v087 (copy of v083) | v171 + T1=0, T2=0.00, T3=0.00, T4=0.00, T5=0.024, T6=0.018 | PPPPPPF  | 74.099686 |
 | durian-v088 (copy of v083) | v171 + T1=0, T2=0.00, T3=0.0 0, T4=0.00, T5=0.024, T6=0.017 | PPPPPPF  | 74.099686 |
 | durian-v089 (copy of v083) | v171 + T1=0, T2=0.00, T3=0.00, T4=0.00, T5=0.024, T6=0.016 | PPPPPPF  | 74.099686 |
+### Batch 33 — durian-v090, durian-v083 (algorithmic: vegaSsimEdgePass)
+| Version | Description | Kattis cases | Kattis score |
+|---|---|---|---|
+| durian-v090 | v083 + vegaSsimEdgePass | PPPPPPP | 90.433026 |
+| durian-v083 | baseline (T6=0.020) | PPPPPPP | 90.433026 |
+
+vegaSsimEdgePass at same keepRatios gives same score; needs multiple runs to verify robustness.
+
+### Batch 34 — durian-v091, durian-v092 (push keepRatios with algorithmic guard)
+| Version | Description | Kattis cases | Kattis score |
+|---|---|---|---|
+| durian-v091 | v090 + T6=0.019 | PPPPPPF | 74.099686 |
+| durian-v092 | v090 + T5=0.023 | PPPPPFF | 57.820157 |
+
+**Finding:** Even with vegaSsimEdgePass, tighter T5/T6 keepRatios still fail. The local current-vs-after SSIM guard (0.99992) does not accurately predict the judge's original-vs-final SSIM. Case 6 fails at T5=0.023; case 7 fails at T6=0.019.
+
+**Implication:** Future algorithmic work must compare collapses against the *original input mesh*, not the current simplified mesh, if SSIM-aware guards are to enable lower keep ratios. The current guard is too strict in a way that does not correlate with judge acceptance.
+
+### Batch 35 — durian-v093, durian-v094 (more algorithmic SSIM guards)
+| Version | Description | Kattis cases | Kattis score |
+|---|---|---|---|
+| durian-v093 | v090 + fast SSIM-aware post-pass for T7 before compact | PPPPPPP | 90.433026 |
+| durian-v094 | v090 + SSIM-aware tail batch (local SSIM >= 0.99992 filter) | PPPPPPP | 90.433026 |
+
+**Finding:** Both algorithmic changes pass all cases but score exactly the same as v083/v090. The T7 post-pass and SSIM-gated tail batch do not find additional safe collapses at the current keep ratios.
+
+**Implication:** The local SSIM threshold is likely too strict and/or the reference (current mesh vs. after-collapse) is the wrong signal. The next algorithmic batch should switch to original-mesh SSIM comparison and/or adaptive thresholds.
+
+---
+
+### Batch 36 — durian-v095, durian-v096 (loosen vegaSsimEdgePass threshold/cap)
+| Version | Description | Kattis cases | Kattis score |
+|---|---|---|---|
+| durian-v095 | v094 + vega threshold 0.99950, scan 3600, cap 300 | PPPPPPP | 90.433026 |
+| durian-v096 | v094 + vega threshold 0.99900, scan 5000, cap 500 | PPPPPPP | 90.433026 |
+
+**Finding:** Loosening the local SSIM threshold and increasing scan/cap does not change the score. The pass either finds no additional safe collapses at the current keep ratios, or any extra collapses it finds are offset/neutral.
+
+**Implication:** Tuning the local-delta SSIM pass is exhausted. The next algorithmic step must change the *reference* used by SSIM-aware decisions to the original input mesh, or integrate SSIM directly into the main collapse selection.
+
+---
+
+### Batch 37 — durian-v097, durian-v098 (original-mesh reference and higher resolution)
+| Version | Description | Kattis cases | Kattis score |
+|---|---|---|---|
+| durian-v097 | v096 + vegaSsimEdgePass uses original-mesh reference, threshold 0.9995 | PPPPPPP | 90.433026 |
+| durian-v098 | v096 + Vega patch resolution 768 px | PPFFFPF | 32.832319 |
+
+**Finding:** Original-mesh reference in `vegaSsimEdgePass` is safe (all cases pass) but does not improve score at current keep ratios. Higher patch resolution breaks cases 3–5 and 7, likely because the finer sampling changes which collapses pass the SSIM guard.
+
+**Implication:** The original-mesh reference is a sound signal. The next step is to make the pass *more aggressive* while keeping the original reference, since it now measures the actual judge metric. Higher resolution is not the right lever.
+
+---
+
+### Batch 39 — durian-v101, durian-v102 (view-dependent weights for large tiers)
+| Version | Description | Kattis cases | Kattis score |
+|---|---|---|---|
+| durian-v101 | v097 + raster importance weights for T5/T6/T7 main QEM | PPPPPPF | 74.087532 |
+| durian-v102 | v101 + T6 keepRatio 0.0195 | PPPPPPF | 74.099686 |
+
+**Finding:** Adding raster-importance weights to the large-tier main QEM breaks case 7. The extra R=256 rendering before the T7 main loop is either too slow or changes the T7 mesh enough to fail the judge. T6 at 0.0195 is slightly higher compression but still fails case 7.
+
+**Implication:** Do not modify T7's main QEM path. Any view-dependent weighting must be restricted to T5/T6 (inputV 50k–400k), or applied only in post-passes after T7's proven schedule.
+
+---
+
+### Batch 40 — durian-v103, durian-v104 (T5-only view-dependent weights)
+| Version | Description | Kattis cases | Kattis score |
+|---|---|---|---|
+| durian-v103 | v097 + raster-importance weights for T5 only | PPPPPPP | 90.420871 |
+| durian-v104 | v103 + T5 keepRatio 0.0235 | PPPPPFP | 74.153497 |
+
+**Finding:** Restricting view-dependent weights to T5 keeps all cases passing, but the score drops slightly (90.42 vs 90.43). Tightening T5 to 0.0235 with these weights breaks case 6. The T5 QEM weighting does not produce a net gain.
+
+**Implication:** The main QEM weighting for T5/T6/T7 is already well-tuned. Further gains are unlikely from small weight/threshold tweaks in the large tiers. The next attempts should target either (a) medium-tier endgame ratios, or (b) a structural change in how collapses are selected/verified.
+
+---
+
+### Batch 41 — durian-v105, durian-v106 (medium-tier endgame tightening)
+| Version | Description | Kattis cases | Kattis score |
+|---|---|---|---|
+| durian-v105 | v097 + absoluteQemEndgame bounds T2 0.14/T3/T4 0.07, 5 iters | PPPPPPP | 90.433026 |
+| durian-v106 | v105 + runScreenCoreMid T2 0.28/T3 0.125 | PPFFPPP | 64.515983 |
+
+**Finding:** v105 passes all cases but score is unchanged. v106 breaks cases 3 and 4 (T3/T4). The tighter `runScreenCoreMid` targets are too aggressive for the hidden medium-tier meshes. The `absoluteQemEndgame` tightening alone is safe but does not translate to Kattis improvement.
+
+**Implication:** The local ppsurf improvement does not generalize to hidden cases for v105. v106's screen-core targets must not be tightened. Continue exploring `absoluteQemEndgame` bounds only.
+
+---
+
+## Next direction: explore absoluteQemEndgame bound space
+
+Plan:
+- **v109**: v105 + T2 lower bound 0.135, T3/T4 lower bound 0.072.
+- **v110**: v105 + T2 lower bound 0.145, T3/T4 lower bound 0.068.
+
