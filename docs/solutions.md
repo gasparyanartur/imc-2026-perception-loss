@@ -468,8 +468,8 @@ normals aligned with the old near-planar patch.
 
 ## Holyfruit family: exact-window SSIM counsel
 
-**Status (2026-07-13):** v11 is the current all-pass champion at 90.447805.
-Automated tuning is paused for a manual tuning handoff.
+**Status (2026-07-13):** v37 is the current all-pass champion at 90.451111.
+Automated structural iteration has resumed after the manual tuning handoff.
 
 **Idea:** Audit conflict-free collapse proposals against exact official-style
 11x11 foreground-window SSIM contribution ledgers, rerendering between rounds.
@@ -477,7 +477,37 @@ Projected-tile indexing makes broader search affordable on tiers 3-4; tier 2
 must retain full-face rendering because indexed v8/v9 both failed hidden test
 3.
 
-`solutions/holyfruit/tunable.cpp` is a behavior-preserving refactor of v11 with
-the meaningful target schedules and search/budget controls grouped at the top.
-Its compiled `.text` section matches v11 byte-for-byte before parameter edits.
-Prepared v12/v13 were not submitted.
+`solutions/holyfruit/tunable.cpp` remains the manual-tuning refactor of v11.
+Holyfruit v37 supersedes it with semantic survivor selection, a giant-safe
+envelope proposal, and 3x indexed exact-window counsel breadth.
+
+
+## Bucket 19: Shape-aware legal-placement portfolios
+
+**Idea:** Preserve raw QEM heap ordering, but offer additional local replacement
+positions when the unconstrained QEM optimum is outside the carried Hausdorff
+envelope. Analytic segment minima and edge trisections provide conservative interior
+alternatives, while exact-window counsel ranks a much broader perceptual pool.
+
+**Status:** In progress in Holyfruit v38/v39 as a continuation of proposal-search breadth. Priority **9.1/10**.
+
+**Hypothesis:** the current queue discards geometrically promising edges because
+its small placement portfolio cannot represent a legal, future-collapsible
+state. Universal alternatives can unlock reductions across every tier without
+the instability of global cost reweighting.
+
+
+## Bucket 20: Depth-certified axial occlusion stripping
+
+**Idea:** Repeatedly collapse surface regions hidden behind nearer geometry in
+all six official camera views. Require the full changed patch to remain behind
+the stored depth atlas and retain manifold, orientation, and Hausdorff-envelope
+guards.
+
+**Status:** In progress in Holyfruit v44/v45. Priority **9.6/10**.
+
+**Hypothesis:** two rings of exclusion around every visible vertex discard most
+valid hidden candidates. Reducing that buffer, while keeping exact per-pixel
+depth certification, can remove materially more vertices without affecting any
+rendered foreground window. This targets a jump rather than another threshold
+sweep.

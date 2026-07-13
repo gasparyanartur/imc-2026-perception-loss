@@ -35,3 +35,28 @@ ground truth.
 
 - Holyfruit v12/v13 isolate another hard test-6 cliff: both preserved tests 1-5 and 7 but failed test 6 (`PPPPPFP`) after combining large keep ratios 0.0236/0.0235 with tighter global QEM caps 0.0325/0.0320. Their 2x/3x exact-window breadth is inactive above 50k, so indexed medium counseling is exonerated; preserve v11's 0.0237 large target and 0.0330 cap until a structurally safer collapse-position or survivor-distribution method exists.
 - Holyfruit v24/v25 reveal complementary segment-placement safety domains. A constrained minimum-QEM edge-segment point changed all local tier fingerprints and gained 0.071 local compression points, then passed official tests 1-6 but failed only T7 (`PPPPPPF`). A minimum merged-envelope-radius point gained 0.169 local points and passed tests 1 and 3-7 but failed only test 2 (`PFPPPPP`). Candidate-position geometry is a real lever unlike target tuning; tier-gated composition is the next test.
+- Holyfruit v26-v29 quantify segment-placement deltas with all-pass tier gates. Relative to constrained-QEM placement, envelope-balanced placement costs 0.011624 on official test 6, is exactly score-neutral on test 5, and costs only 0.000472 across tests 3-4 combined. The local evaluator ranks envelope placement higher, again showing that local compression gains are misallocated relative to official cases.
+- Holyfruit v34/v35 validate additive partial-score composition: valence-aware equal-cost direction selection gained 0.001210 across tests 1-6 relative to v24, and substituting v25's envelope-balanced giant proposal restored T7 exactly as predicted. Both scored 90.448277 all-pass, improving the champion by 0.000472. Projected screen importance was score-neutral versus valence.
+
+- Holyfruit v36/v37 prove indexed exact-window search breadth is a genuine
+  medium-tier lever: 2x breadth scored 90.448750 and 3x breadth with projected
+  survivor selection scored 90.451111, both all-pass, without changing keep
+  targets or QEM caps. The effect is small because the pass is bounded, but it
+  validates direct perceptual proposal search over additional target tuning.
+
+- Holyfruit v38/v39 show that unconstrained all-tier position breadth is not
+  safely compositional: offering both segment objectives on the giant tier
+  fails T7. v38 also failed T5, while v39 trisections restored T5. Preserve the
+  proven constrained-QEM <=400k/envelope >400k partition when scaling search.
+
+- Holyfruit v40/v41 restore the locally safe giant fingerprint but still fail
+  official T7 after adding a dormant <=400k segment branch. Whole-translation-
+  unit sensitivity is therefore stronger than local output parity. Future T7
+  experiments should preserve v37s geometry code and vary existing schedules
+  in place. v41s 5x breadth passes tests 1-6 with subtotal 74.105075.
+
+- Holyfruit v42/v43 close the pure breadth direction. Scaling exact counsel to
+  6x-8x and widening all other tier searches produced only 74.101572/74.101144
+  with T7 failure, below earlier partial subtotals. The local T7 tail was count-
+  inert despite consuming the remaining runtime. Breadth beyond v37s 3x is not
+  a path to 95; exploit evaluator-invisible geometry instead.

@@ -33,6 +33,62 @@ single stale round's budget is weak. v3's 0.031449-point gain indicates that
 rerender/reseed rounds unlock a materially different set of locally safe
 collapses. Both candidates are immutable after their single diagnostic.
 
+### Batch 12 official result and post-mortem
+
+- v32: 74.114938, PPPPPPF.
+- v33: 74.114938, PPPPPPF.
+
+Both gain 0.001210 across tests 1-6 relative to v24 but fail giant test 7.
+Projected importance is score-neutral relative to valence. Combining this partial
+gain with v26's proven envelope-safe giant contribution predicts 90.448277,
+which would beat v11 by 0.000472.
+
+## Batch 13 - v34, v35
+
+**Hypothesis:** semantic equal-cost direction selection improves tests 1-6,
+while preserving baseline direction selection and adding only the proven
+envelope-balanced segment point on the giant tier restores test 7.
+
+- v34: valence direction tie-break through 400k; baseline direction selection
+  plus envelope-balanced segment point above 400k. Local: 88.108703% compression,
+  0.826767 mean SSIM, 27.300745% mean Hausdorff usage, zero topology defects.
+- v35: projected-importance/valence direction tie-break on screen tiers, valence
+  tie-break elsewhere through 400k; baseline direction plus envelope point on
+  giant. Local: 88.108703% compression, 0.826767 mean SSIM, 27.342400% mean
+  Hausdorff usage, zero topology defects.
+
+Predicted all-pass score for either composition: 90.448277. Preserve all v11
+targets and schedules. Both candidates are immutable after their single diagnostic.
+
+### Batch 13 official result and post-mortem
+
+- v34: 90.448277, PPPPPPP; new champion, exactly matching the partial-score
+  prediction and beating v11 by 0.000472.
+- v35: 90.448277, PPPPPPP; projected importance remains score-neutral.
+
+Semantic direction tie-breaking is a small but real official lever on tests
+1-6. The envelope-balanced giant shield composes additively and restores T7.
+Promote v34 as canonical Holyfruit base.
+
+## Batch 14 - v36, v37
+
+**Hypothesis:** indexed exact-window breadth was exonerated by v12/v13 because
+it is inactive on their sole failing test 6. Isolating it on the v34 champion
+can improve medium survivor distribution without changing any proven target or
+QEM cap.
+
+- v36: v34 plus 2x exact-window seed/evaluation/acceptance breadth on indexed
+  tiers 3-4 and a 5.0-second indexed counsel window.
+- v37: v35 plus 3x corresponding indexed breadth and the same window.
+
+Retain full-face tier-2 rendering, all v34 targets/caps, semantic tie-breaking
+through 400k, and the giant envelope shield. v36 local on the canonical 10 meshes:
+93.563877% compression, 0.854866 mean SSIM, 40.335620% mean Hausdorff
+usage, zero topology defects. v37 local on the broad 24-mesh suite: 89.771506%
+compression, 0.852234 mean SSIM, 22.870921% mean Hausdorff usage, zero
+topology defects. Both candidates are immutable after their single successful
+diagnostic.
+
 ### Official result and post-mortem
 
 - v2: 74.103464, PPPPPPF. The looser global QEM cap changed the giant path and failed test 7.
@@ -268,8 +324,187 @@ though it hurts tests 3-6 collectively. Two all-pass boundary gates isolate
 those contributions while retaining a structural segment proposal on all tiers.
 
 - v28: constrained-QEM through 50k; envelope-balanced above 50k. Relative to
-  v26 this switches only official test 6.
+  v26 this switches only official test 6. Local: 88.188256% compression,
+  0.826380 mean SSIM, 27.354775% mean Hausdorff usage, zero topology defects.
 - v29: constrained-QEM through 45k; envelope-balanced above 45k. Relative to
-  v28 this additionally switches official test 5.
+  v28 this additionally switches official test 5. Local: 88.196067% compression,
+  0.826341 mean SSIM, 27.354190% mean Hausdorff usage, zero topology defects.
 
-Local diagnostics pending.
+Both candidates are immutable after their single local diagnostic.
+
+### Batch 10 official result and post-mortem
+
+- v28: 90.435443, PPPPPPP. Switching only test 6 to envelope placement
+  costs 0.011624 versus v26.
+- v29: 90.435443, PPPPPPP. Switching test 5 as well is exactly score-neutral.
+
+Envelope placement is strongly harmful on test 6, neutral on test 5, and the
+combined tests 3-4 delta is only -0.000472. The two objectives remain
+independently valid on screen tiers, so test whether adding both candidate
+positions exposes a better legal trajectory than choosing either one.
+
+## Batch 11 - v30, v31
+
+**Hypothesis:** constrained-QEM and envelope-balanced segment positions are
+complementary proposals. Offering both in officially safe screen tiers can
+unlock collapses neither single-position trajectory finds, while tier gates
+shield the known test-2, test-6, and test-7 failure domains.
+
+- v30: constrained-QEM only through 5k, both points on 5k-50k, constrained-QEM
+  on 50k-400k, envelope-only above 400k. Local: 88.300671% compression,
+  0.826249 mean SSIM, 27.469985% mean Hausdorff usage, zero topology defects.
+- v31: constrained-QEM through 45k, both points only on 45k-50k,
+  constrained-QEM on 50k-400k, envelope-only above 400k. Local: 88.188226%
+  compression, 0.826351 mean SSIM, 27.346905% mean Hausdorff usage, zero
+  topology defects.
+
+Both retain v11 targets and all other schedules and are immutable after one
+diagnostic.
+
+### Batch 11 official result and post-mortem
+
+- v30: 90.447067, PPPPPPP.
+- v31: 90.447067, PPPPPPP.
+
+Both equal v26 exactly. The additional segment proposal changes local
+fingerprints and compression but is officially count-inert; choosing or
+combining segment objectives does not beat v11. Retire this family.
+
+## Batch 12 - v32, v33
+
+**Hypothesis:** equal-cost collapse directions currently preserve an endpoint
+by vertex-index order, wasting a free opportunity to retain future
+collapsibility and perceptual importance. A deterministic semantic tie-break
+changes survivor allocation without globally reordering heap costs.
+
+- v32: on exact direction-cost ties, keep the endpoint with higher active
+  valence. Local: 88.109702% compression, 0.826732 mean SSIM, 27.226845% mean
+  Hausdorff usage, zero topology defects on 20 scenarios.
+- v33: on screen tiers, keep the endpoint with higher projected anchor
+  importance and use valence as a tie-break; on other tiers use valence. Local:
+  88.109702% compression, 0.826732 mean SSIM, 27.268500% mean Hausdorff usage,
+  zero topology defects on 20 scenarios.
+
+Apply the policy in both queued and fully validated candidate selection on all
+tiers. Preserve every v11 target, cap, renderer, and schedule. Local diagnostics
+Both candidates are immutable after their single diagnostic.
+
+
+### Batch 14 official result and post-mortem
+
+- v36: 90.448750, PPPPPPP; 2x indexed breadth gains 0.000473 over v34.
+- v37: 90.451111, PPPPPPP; 3x breadth plus projected endpoint policy gains
+  another 0.002361 and is the new champion.
+
+Broader exact-window proposal search transfers officially and has not exhausted
+its marginal return. Because v36 and v37 use different endpoint policies, the
+relative contribution of 3x breadth and projected survivor choice remains
+confounded. The gain is nevertheless structural: targets and QEM caps did not
+change. Promote v37 as canonical Holyfruit base.
+
+## Batch 15 - v38, v39
+
+**Hypothesis:** the v37 gain shows the solver is proposal-limited. Broaden both
+the exact perceptual search and the legal replacement-position portfolio on
+every tier, while keeping every reduction target and safety cap fixed.
+
+- v38: 4x indexed breadth, 2x tier-2 breadth, longer counsel windows, the
+  constrained-QEM segment point on all tiers, and the envelope-balanced point
+  retained on the giant tier.
+- v39: 5x indexed breadth, 3x tier-2 breadth, longer counsel windows, the same
+  segment objectives, plus both edge trisection positions on every tier.
+
+These are large proposal-space expansions, not fractional threshold tuning.
+Both retain v37 targets, QEM caps, renderer guards, survivor policy, and giant
+keep ratio. v38 local on 24 meshes: 89.809629% compression, 0.851795 mean SSIM,
+22.804475% mean Hausdorff usage, zero topology defects. v39 local on 24
+meshes: 89.835594% compression, 0.850831 mean SSIM, 22.729058% mean
+Hausdorff usage, zero topology defects. Both are immutable after one diagnostic.
+
+
+### Batch 15 official result and post-mortem
+
+- v38: 58.765809, PPPPFPF; failed hidden test 5 and giant test 7.
+- v39: 74.102602, PPPPPPF; trisections restored test 5, but T7 still failed.
+
+The giant failure is attributable to offering constrained-QEM and envelope
+segment points together above 400k; the established safe composition is
+constrained-QEM through 400k and envelope-only above it. v38 also shows that
+4x breadth plus its portfolio crosses the test-5 cliff, while v39 demonstrates
+that a different legal-position basis can restore that tier. Preserve v37.
+
+## Batch 16 - v40, v41
+
+**Hypothesis:** retain broader exact-window search while restoring the proven
+all-pass segment safety partition. This removes the Batch-15 giant composition
+error and tests whether the v37 breadth gain continues at larger scales.
+
+- v40: 4x indexed and 2x tier-2 breadth with longer windows; constrained-QEM
+  segment point through 400k and envelope-only above 400k.
+- v41: 5x indexed and 3x tier-2 breadth with longer windows; the same proven
+  tier-gated segment portfolio.
+
+No trisections, target changes, cap changes, or dual giant segment objectives.
+v40 local on 24 meshes: 89.809629% compression, 0.851903 mean SSIM,
+22.893054% mean Hausdorff usage, zero topology defects. v41 local on 24
+meshes: 89.810341% compression, 0.851908 mean SSIM, 22.893054% mean
+Hausdorff usage, zero topology defects. Both restore v37s exact giant stress
+fingerprint and are immutable after one diagnostic.
+
+
+### Batch 16 official result and post-mortem
+
+- v40: 58.765809, PPPPFPF; exactly repeats v38.
+- v41: 74.105075, PPPPPPF; passes tests 1-6 and improves v39s passing-case
+  subtotal by 0.002473, but still fails T7.
+
+The safe local giant fingerprint does not predict official T7 once a dormant
+<=400k segment branch is added to the translation unit. Fivefold breadth itself
+is compatible with tests 1-6, but new source structure is not giant-safe. Return
+to v37s exact geometry logic and vary only existing search schedules.
+
+## Batch 17 - v42, v43
+
+**Hypothesis:** search breadth can be scaled coherently on every tier without
+adding new geometry branches. Existing small-tier star, screen exact-counsel,
+large-tier transactional-star, and giant tail-batch mechanisms are widened in
+place.
+
+- v42: moderate all-tier breadth: 6x/4x exact counsel, wider tier-1 and tier-5
+  star scans, and conservative activation of the existing T7 tail batch.
+- v43: aggressive all-tier breadth: 8x/5x exact counsel, substantially wider
+  tier-1/tier-5 scans, and an earlier 2x-capacity T7 tail search.
+
+Keep v37s targets, QEM cap, position portfolio, semantic survivor policy, and
+all renderer thresholds unchanged. v42 local on 24 meshes: 89.742526% compression, 0.852286 mean SSIM,
+22.832371% mean Hausdorff usage, zero topology defects. Its 13-second giant
+tail start was not reached. v43 local: 89.743136% compression, 0.852277 mean
+SSIM, 22.832246% mean Hausdorff usage, zero topology defects. Its tail consumed
+the full 20.61-second budget but left the giant count and fingerprint unchanged.
+Both are immutable after one diagnostic.
+
+
+### Batch 17 official result and post-mortem
+
+- v42: 74.101572, PPPPPPF.
+- v43: 74.101144, PPPPPPF.
+
+Both preserve tests 1-6 but fail T7 and trail earlier failing-T7 subtotals. Search
+breadth is saturated: 2x/3x helped, while 4x-8x worsened hidden allocation or
+validity. The active local T7 tail spent roughly nine seconds and removed zero
+vertices. Retire pure breadth scaling and preserve v37 as champion.
+
+## Batch 18 - v44, v45
+
+**Hypothesis:** substantial vertex mass is hidden behind the six axial depth
+layers. Existing per-pixel occlusion certification can remove it, but a two-ring
+visibility exclusion and missing tier wiring make the pass too conservative.
+
+- v44: run the occluded-edge pass on every tier and reduce its exclusion from
+  two visible rings to one; retain per-face depth proof and geometry guards.
+- v45: run it on every tier and admit any non-visible endpoint pair, relying on
+  the existing changed-patch visibility rejection and per-pixel behind-depth
+  proof instead of a neighbor-ring exclusion.
+
+Both return to v37s 3x exact breadth, targets, caps, position logic, and all
+existing transactional audits. Local diagnostics pending.

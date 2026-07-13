@@ -66,3 +66,75 @@
 - v26 service ID: a185f012-2386-41b3-a7a8-e0deb3639e96; Kattis 20037269; scored 90.447067; PPPPPPP
 - v27 service ID: 1c108ba5-4382-4b52-8bb3-4c2a059534f2; Kattis 20037307; scored 90.434971; PPPPPPP
 - Finished: 2026-07-13T15:03:58Z
+
+
+## Batch 10 - launched 2026-07-13T15:13:16Z
+
+- Sources: solutions/holyfruit/v28.cpp, solutions/holyfruit/v29.cpp
+- Batch file: data/submission-batches/holyfruit-batch-10.json
+- v28 service ID: 0805c176-485e-466c-804f-1657f36ac8ec; Kattis 20037510; scored 90.435443; PPPPPPP
+- v29 service ID: abc7dcd4-35d6-4ab2-ad48-a08a0fd9afd5; Kattis 20037542; scored 90.435443; PPPPPPP
+- Finished: 2026-07-13T15:33:59Z
+
+
+## Batch 11 - launched 2026-07-13T15:44:22Z
+
+- Sources: solutions/holyfruit/v30.cpp, solutions/holyfruit/v31.cpp
+- Batch file: data/submission-batches/holyfruit-batch-11.json
+- v30 service ID: 0f2a95fb-81b9-468b-bd13-e0f417b5b905; Kattis 20037666; scored 90.447067; PPPPPPP
+- v31 service ID: fe0f74e8-6c63-44e0-9672-7ee2d02b0d9f; Kattis 20037671; scored 90.447067; PPPPPPP
+- Finished: 2026-07-13T15:53:11Z
+
+
+## Batch 12 - launched 2026-07-13T16:02:52Z
+
+- Sources: solutions/holyfruit/v32.cpp, solutions/holyfruit/v33.cpp
+- Batch file: data/submission-batches/holyfruit-batch-12.json
+- v32 service ID: 4c874817-3eff-427f-86e9-0d2d65d8ed26; Kattis 20037771; scored 74.114938; PPPPPPF
+- v33 service ID: 01e14460-4a26-4211-88a5-3b3f9fe9eb94; Kattis 20037790; scored 74.114938; PPPPPPF
+- Finished: 2026-07-13T16:13:39Z
+
+
+## Batch 13 - launched 2026-07-13T16:23:55Z
+
+- Sources: solutions/holyfruit/v34.cpp, solutions/holyfruit/v35.cpp
+- Batch file: data/submission-batches/holyfruit-batch-13.json
+- v34 service ID: 55ea5d22-d2e8-4264-974d-83ddbfbec215; Kattis 20037874; scored 90.448277; PPPPPPP
+- v35 service ID: 3a831df7-1c63-4dab-81c3-940ba2837735; Kattis 20037904; scored 90.448277; PPPPPPP
+- Finished: 2026-07-13T16:34:23Z
+
+
+## Batch 14 - launched 2026-07-13T16:43:27Z
+
+- Sources: solutions/holyfruit/v36.cpp, solutions/holyfruit/v37.cpp
+- Batch file: data/submission-batches/holyfruit-batch-14.json
+- v36 service ID: 0079045a-f908-43a6-8149-8046853b1f22; Kattis 20037979; scored 90.448750; PPPPPPP
+- v37 service ID: e8c2ab53-3a54-4c46-977d-dba186ea7a22; Kattis 20037994; scored 90.451111; PPPPPPP
+- Finished: 2026-07-13T16:51:06Z
+
+
+## Batch 15 - launched 2026-07-13T17:09:23Z
+
+- Sources: solutions/holyfruit/v38.cpp, solutions/holyfruit/v39.cpp
+- Batch file: data/submission-batches/holyfruit-batch-15.json
+- v38 service ID: c35af362-0c04-46d4-9cbf-3eddf0f933e5; Kattis 20038100; scored 58.765809; PPPPFPF
+- v39 service ID: 57d605b6-2b5a-4f62-a548-da1562cd5f49; Kattis 20038110; scored 74.102602; PPPPPPF
+- Finished: 2026-07-13T17:13:34Z
+
+
+## Batch 16 - launched 2026-07-13T17:24:33Z
+
+- Sources: solutions/holyfruit/v40.cpp, solutions/holyfruit/v41.cpp
+- Batch file: data/submission-batches/holyfruit-batch-16.json
+- v40 service ID: 22134060-358e-4e00-8486-d85ca4b59424; Kattis 20038176; scored 58.765809; PPPPFPF
+- v41 service ID: 4bbe20d9-8e95-4133-9959-d0be4c634691; Kattis 20038177; scored 74.105075; PPPPPPF
+- Finished: 2026-07-13T17:28:08Z
+
+
+## Batch 17 - launched 2026-07-13T17:40:08Z
+
+- Sources: solutions/holyfruit/v42.cpp, solutions/holyfruit/v43.cpp
+- Batch file: data/submission-batches/holyfruit-batch-17.json
+- v42 service ID: ffd65169-5d6a-4dda-9d21-9cd577b57194; Kattis 20038269; scored 74.101572; PPPPPPF
+- v43 service ID: 26a1d766-b13e-41b9-a2cc-e1a6ab176eb9; Kattis 20038278; scored 74.101144; PPPPPPF
+- Finished: 2026-07-13T17:44:02Z
