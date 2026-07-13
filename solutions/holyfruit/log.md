@@ -139,5 +139,31 @@ baseline. No Batch 6 was launched.
 I'm copying from from tunable.cpp
 I'll start with the T2 and T3 acceptance limit, since that seems to be relevant in previous iterations.
 
-v14: 48 72
-v15: 64 128
+v14: 48 72 -> PPPPPPF 74.114466 (last one randomly fails sometimes, no worries)
+v15: 64 128 -> PPPPPPP 90.447805 (exacly same as v11, no difference in the output but larger acceptance limit, not sure if helpful)
+
+Seems like the acceptance limit does not directly impact score much, next I tune the hp_t2KR3, hp_t3KRCore, hp_t4KR3
+Start values: 0.30, 0.145, 0.08
+
+v16 0.25, 0.12, 0.06 PPFFFPP 49.170521 (way too aggressive)
+v17 0.15, 0.06, 0.03 PPFFFPP 49.170521
+
+v18 0.28, 0.135, 0.07 PPFFFPP 49.170521 still too agressive
+
+v19 0.29, 0.143, 0.075 PPFFFPP 49.170521 suspicious
+v20 0.30, 0.145, 0.08  PPPPPPP 90.447805 (back to v11, seems like the previous values were too aggressive)
+
+Leave those, try moving the left-most parameters instead
+hp_t2KR1, hp_t3KRSafe, hp_t4KR1
+(start) 0.36, 0.16, 0.14
+
+v21 0.35, 0.15, 0.13 -> PPPFFPP 60.837403 Interesting, very sensitive
+v22 0.34, 0.14, 0.12 -> PPPFFPP 60.837403 
+
+Seems like these parameters are tuned, let's try the trans parameters instead
+
+hp_t3KR1Trans, hp_t3KR2Trans, hp_t3KR3Trans, hp_t3KR4Trans, hp_t3KR5Trans, hp_t3KR6Trans
+(start) 0.125, 0.13, 0.135, 0.1375, 0.14, 0.1425
+v23 0.12, 0.12, 0.12, 0.12, 0.12, 0.12 -> PPPFFPP 60.837403
+
+Not sure what these parameters are actually doing. Enough hand-tuning, doesn't seem to be a winning strategy. I'll hand the wheel back to the LLM.
