@@ -465,3 +465,19 @@ normals aligned with the old near-planar patch.
 - v003 proved conservative flips all-pass but score-neutral. v005-v024 exhausted T5 density, carried-budget, screen-moment, local-normal, local-reference, and whole-state QEM continuations; every accepted sub-8% hidden trajectory failed test 5.
 - v025-v032 tested star retriangulation. The default envelope was count-inert; widening it produced extra removals, but even two extra vertices failed hidden test 5 despite slightly better local SSIM.
 - Current direction: stop optimizing the exact T5 cliff and transfer bounded retriangulation/future-collapsibility experiments to the 25-45k tier. Priority **9.0/10**.
+
+## Holyfruit family: exact-window SSIM counsel
+
+**Status (2026-07-13):** v11 is the current all-pass champion at 90.447805.
+Automated tuning is paused for a manual tuning handoff.
+
+**Idea:** Audit conflict-free collapse proposals against exact official-style
+11x11 foreground-window SSIM contribution ledgers, rerendering between rounds.
+Projected-tile indexing makes broader search affordable on tiers 3-4; tier 2
+must retain full-face rendering because indexed v8/v9 both failed hidden test
+3.
+
+`solutions/holyfruit/tunable.cpp` is a behavior-preserving refactor of v11 with
+the meaningful target schedules and search/budget controls grouped at the top.
+Its compiled `.text` section matches v11 byte-for-byte before parameter edits.
+Prepared v12/v13 were not submitted.
