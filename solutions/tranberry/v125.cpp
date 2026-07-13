@@ -1,4 +1,5 @@
-// Durian v097: v096 + vegaSsimEdgePass compares against the original input mesh.
+// Tranberry v125: activate original-reference endgame on the skipped 25k-45k tier.
+// Reserve time for a 1024px judge-scale transactional check.
 // When sourceVerts/sourceFaces are available, render full-view reference Vega images
 // of the original mesh once per pass. localVegaSsimForEdge extracts the same patch from
 // the reference and compares the after-collapse patch to it. Threshold 0.9995.
@@ -217,7 +218,7 @@ if(nV<=10){writeMesh();return;}
 startTime=chrono::steady_clock::now();
 
 if(nV>5000&&nV<=50000){
-if(nV>25000&&nV<=45000){runScreenCoreMid();vegaSsimEdgePass(true);compact();}
+if(nV>25000&&nV<=45000){qemDeadline=HParam_TimeBudgetSeconds-6.4;runScreenCoreMid();vegaSsimEdgePass(true);compact();}
 else runTransactionalScreenMid();
 absoluteQemEndgame();
 writeMesh();return;
@@ -3009,7 +3010,7 @@ void restoreSafeContinuation(const vector<Vec3>&safeV,const vector<Face>&safeF,
 
 void continueAbsoluteQem(double ratio){
     screenTier=inputV<=25000?2:(inputV<=45000?3:4);
-    int R=screenTier==2?1024:(screenTier==3?512:768);
+    int R=screenTier==2?1024:(screenTier==3?1024:768);
     if(screenTier==3)buildRasterImportanceTier3(R);else buildRasterImportance(R);
     initFaceWeights();
     targetV=max(10,(int)floor(inputV*ratio));targetV=min(targetV,nV);
@@ -3021,16 +3022,15 @@ void continueAbsoluteQem(double ratio){
 }
 
 void absoluteQemEndgame(){
-    if(inputV>25000 && inputV<=45000)return;
     if(!(inputV>5000&&inputV<=45000)||sourceVerts.empty()||sourceFaces.empty())return;
     if(elapsed()>HParam_TimeBudgetSeconds-6.0){sourceVerts.clear();sourceFaces.clear();return;}
     vector<Vec3>safeV=verts,safeBestV=verts;vector<Face>safeF=faces,safeBestF=faces;vector<double>safeR=compactedRadius,safeBestR=compactedRadius;
     if(safeR.size()!=safeV.size())safeR.assign(safeV.size(),0.0);safeBestR=safeR;
-    double oldDiag=diag,oldHausd=hausd;int R=inputV<=25000?1024:512;
+    double oldDiag=diag,oldHausd=hausd;int R=1024;
     vector<RefImage>ref(6);for(int v=0;v<6;++v)ref[v]=renderReference(sourceVerts,sourceFaces,v,R);sourceVerts.clear();sourceFaces.clear();
     if(elapsed()>HParam_TimeBudgetSeconds-4.2)return;RefScore safeScore=compareToReference(ref,safeV,safeF,R);
-    double minSafe=inputV<=25000?0.9200:0.9180;if(safeScore.finalScore<minSafe)return;
-    double hi=double(safeV.size())/double(inputV),lo=inputV<=25000?0.16:0.075;bool improved=false;
+    double minSafe=inputV<=25000?0.9200:0.9300;if(safeScore.finalScore<minSafe)return;
+    double hi=double(safeV.size())/double(inputV),lo=inputV<=25000?0.16:0.10;bool improved=false;
     for(int it=0;it<4&&elapsed()<HParam_TimeBudgetSeconds-1.25;++it){
         double ratio=0.5*(lo+hi);restoreSafeContinuation(safeV,safeF,safeR,oldDiag,oldHausd);continueAbsoluteQem(ratio);
         if(verts.size()>=safeBestV.size()){lo=ratio;continue;}RefScore cand=compareToReference(ref,verts,faces,R);

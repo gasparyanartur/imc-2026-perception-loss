@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Procedurally generate two missing tier-coverage fixtures.
+"""Procedurally generate missing tier-coverage fixtures.
 
 Outputs (under data/synth_bench/):
 
   tier2_bumpy_hard.obj  - 10k vertices, aggressive high-frequency bumps
   tier5_bumpy.obj       - 500k vertices, moderate-frequency bumps
+  tier4_boundary.obj    - 48k vertices, exercises the 45k-50k solver band
 
 The synth_bench tier3_bumpy_hard.obj and friends already cover tiers 3 and 4;
 this script adds a tier-2 high-detail mesh and a tier-5 stress mesh so every
@@ -71,6 +72,12 @@ def main() -> None:
         nu=708, nv=708,
         base_freq=18.0, amp_freq=14.0,
         bump_amp=0.12,
+    )
+    write_sphere_with_bumps(
+        OUT_DIR / "tier4_boundary.obj",
+        nu=240, nv=200,
+        base_freq=16.0, amp_freq=13.0,
+        bump_amp=0.14,
     )
 
 

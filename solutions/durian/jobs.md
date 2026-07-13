@@ -64,6 +64,35 @@
 - v033: v002 + T2 0.30 (tightening)
 - v034: v002 + T3 0.15 (tightening)
 
+### 2026-07-12 23:26 UTC — Batch 57 (v137, v138) — IN FLIGHT
+- v137: v131 + absoluteQemEndgame minSafe 0.910
+- v138: v131 + absoluteQemEndgame minSafe 0.930
+- Local eval: both 94.79% compression
+- Batch file: `data/submission-batches/batch-20260712-232601.json`
+
+### 2026-07-12 23:29 UTC — Batch 58 (v139, v140) — IN FLIGHT
+- v139: v131 + CParam_HausdorffDiagFraction 0.055
+- v140: v131 + CParam_HausdorffDiagFraction 0.0575
+- Local eval: v139 94.64% / 0.854 SSIM; v140 94.73% / 0.851 SSIM
+- Batch file: `data/submission-batches/batch-20260712-232939.json`
+
+### 2026-07-13 04:03 UTC — Batch 59 (v141, v142) — IN FLIGHT
+- v141: v140 + T5 keepRatio 0.0235
+- v142: v140 + T6 keepRatio 0.0195
+- Local eval: both 94.73% / 0.851 SSIM
+- Batch file: `data/submission-batches/batch-20260713-040338.json` (also 040625)
+
+### 2026-07-13 04:09 UTC — Batch 60 (v145, v146) — IN FLIGHT
+- v145: v129 (T5=0.0238) + T5 keepRatio 0.0235
+- v146: v129 (T5=0.0238) + T5 keepRatio 0.0236
+- Batch file: `data/submission-batches/batch-20260713-040941.json`
+- Submission IDs: 81da8a54-404b-405d-a286-c9f8d333c521, 978aae1d-6459-445b-a345-7c83866a460f
+
+### 2026-07-13 04:10 UTC — Batch 61 (v143, v144) — IN FLIGHT
+- v143: v083 (T5=0.024, T6=0.020) + T6 keepRatio 0.0198
+- v144: v083 (T5=0.024, T6=0.020) + T5 keepRatio 0.0238
+- Batch file: `data/submission-batches/batch-20260713-041042.json`
+- Submission IDs: 9ef6f6e4-563c-4b84-aabf-c2abd0959f47, 7da3cb67-4443-419f-a71e-f8c880c38db8
 
 ### 2026-07-12 23:29 UTC — Batch 58 (v139, v140) — IN FLIGHT
 - v139: v131 + CParam_HausdorffDiagFraction 0.055

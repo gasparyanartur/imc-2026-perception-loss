@@ -380,10 +380,171 @@ status. Detailed hypotheses and post-mortems remain in `log.md`.
 ## Batch 32 — v091-v092
 
 - Launched: 2026-07-13 01:47 local time
-- State: in flight
+- State: terminal
+- Finished: 2026-07-13 02:05 local time
 - Batch file: `data/submission-batches/batch-20260712-234743.json`
 - Sources and submission IDs:
   - `solutions/tranberry/v091.cpp` — `1b205fcd-17eb-410a-ad9b-690722c8f1a4`
-    - Pending
+    - Terminal: score `78.766143`, cases `PPFPPPP`
   - `solutions/tranberry/v092.cpp` — `365f8fea-8fdc-4d5f-9e53-6ad6f8c2d07e`
-    - Pending
+    - Terminal: score `64.515983`, cases `PPFFPPP`
+
+
+
+
+## Batch 33 — v125-v126
+
+- Launched: 2026-07-13 06:11 local time
+- State: terminal
+- Finished: 2026-07-13 06:27 local time
+- Batch file: `data/submission-batches/batch-20260713-041107.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v125.cpp` — `078a23aa-2f4e-469a-a044-f25c6ba18bb5`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+  - `solutions/tranberry/v126.cpp` — `bdcb05b0-9cd2-44c7-ba94-a363e8b58731`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+
+
+## Batch 34 — v127-v128
+
+- Launched: 2026-07-13 06:50 local time
+- State: terminal
+- Finished: 2026-07-13 06:52 local time
+- Batch file: `data/submission-batches/batch-20260713-045005.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v127.cpp` — `4127e4f9-f683-4d5c-acdf-622c5cd48aee`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+  - `solutions/tranberry/v128.cpp` — `bb9ed7af-ba43-48c2-8035-88e571c30810`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+
+
+## Batch 35 — v129-v130
+
+- Launched: 2026-07-13 06:59 local time
+- State: terminal
+- Finished: 2026-07-13 07:02 local time
+- Batch file: `data/submission-batches/batch-20260713-045952.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v129.cpp` — `31e49bb7-7d86-492c-9baa-e2bb3e34af0e`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+  - `solutions/tranberry/v130.cpp` — `66691eb7-e6a6-47cd-ad78-fae6102a11ff`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+
+
+## Batch 36 — v131-v132
+
+- Launched: 2026-07-13 07:08 local time
+- State: terminal
+- Finished: 2026-07-13 07:11 local time
+- Batch file: `data/submission-batches/batch-20260713-050846.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v131.cpp` — `ae45e5c5-aeb1-4bb4-90dc-84afa239e611`
+    - Terminal: score `90.433026`, cases `PPPPPPP`
+  - `solutions/tranberry/v132.cpp` — `12e0ccad-b332-4865-95e9-54ef51ac287a`
+    - Terminal: score `74.099686`, cases `PPPPPPF`
+
+
+## Batch 37 — v133-v134
+
+- Launched: 2026-07-13 07:17 local time
+- State: terminal
+- Finished: 2026-07-13 07:20 local time
+- Batch file: `data/submission-batches/batch-20260713-051746.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v133.cpp` — `32da42a5-9168-4569-a0cc-7f8d6be6a579`
+    - Terminal: score `74.099686`, cases `PPPPPPF`
+  - `solutions/tranberry/v134.cpp` — `a1433f83-4b3a-4a39-a33f-6f5df18514ab`
+    - Terminal: score `74.099686`, cases `PPPPPPF`
+
+
+## Batch 38 — v135-v136
+
+- Launched: 2026-07-13 07:27 local time
+- State: terminal
+- Finished: 2026-07-13 07:31 local time
+- Batch file: `data/submission-batches/batch-20260713-052756.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v135.cpp` — `33d0a59b-4ccc-4f74-aef9-5af48240b85d`
+    - Terminal: score `74.099686`, cases `PPPPPPF`
+  - `solutions/tranberry/v136.cpp` — `5b6a2f76-05cf-423e-9f1a-8902eb8fdcfa`
+    - Terminal: score `74.099686`, cases `PPPPPPF`
+
+
+## Batch 39 — v138-v139
+
+- Launched: 2026-07-13 07:40 local time
+- State: terminal
+- Finished: 2026-07-13 07:43 local time
+- Batch file: `data/submission-batches/batch-20260713-054006.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v138.cpp` — `9ca1cb26-827c-43d9-a541-3908725c92db`
+    - Terminal: score `74.099686`, cases `PPPPPPF`
+  - `solutions/tranberry/v139.cpp` — `e02aa00b-09f3-43f3-bb41-f63b0839e8ef`
+    - Terminal: score `90.399696`, cases `PPPPPPP`
+
+
+## Batch 40 — v140-v142
+
+- Launched: 2026-07-13 07:48 local time
+- State: terminal
+- Finished: 2026-07-13 07:50 local time
+- Batch file: `data/submission-batches/batch-20260713-054835.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v140.cpp` — `e916ecc3-569b-40df-987a-ba709f29a782`
+    - Terminal: score `90.399696`, cases `PPPPPPP`
+  - `solutions/tranberry/v142.cpp` — `ead75e36-ec93-4460-8827-3f472b8bbaa8`
+    - Terminal: score `90.399696`, cases `PPPPPPP`
+
+
+## Batch 41 — v143-v144
+
+- Launched: 2026-07-13 07:58 local time
+- State: terminal
+- Finished: 2026-07-13 08:02 local time
+- Batch file: `data/submission-batches/batch-20260713-055824.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v143.cpp` — `697964b9-4893-45e2-9522-02eba90bae3e`
+    - Terminal: score `90.399696`, cases `PPPPPPP`
+  - `solutions/tranberry/v144.cpp` — `b0af3de0-7ef4-4092-a6f7-c1479e614250`
+    - Terminal: score `75.049372`, cases `PPPPFPP`
+
+
+## Batch 42 — v145-v146
+
+- Launched: 2026-07-13 08:07 local time
+- State: terminal
+- Finished: 2026-07-13 08:10 local time
+- Batch file: `data/submission-batches/batch-20260713-060752.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v145.cpp` — `58c946ef-1304-4cdf-8f52-826b4c11d7f1`
+    - Terminal: score `90.399696`, cases `PPPPPPP`
+  - `solutions/tranberry/v146.cpp` — `9f23b27d-6f46-4b5e-bb4f-a3cd8d70f7f3`
+    - Terminal: score `75.049372`, cases `PPPPFPP`
+
+
+## Batch 43 — v147-v148
+
+- Launched: 2026-07-13 08:20 local time
+- State: terminal
+- Finished: 2026-07-13 08:22 local time
+- Service family metadata: `default` (label omitted accidentally; corrected for Batch 44)
+- Batch file: `data/submission-batches/batch-20260713-062001.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v147.cpp` — `5c6cd49e-6ff6-4066-82fc-40cb535c12fa`
+    - Terminal: score `58.749362`, cases `PPPPFPF`
+  - `solutions/tranberry/v148.cpp` — `a74a1890-a269-46fd-af4b-c039f28d9cf1`
+    - Terminal: score `75.049372`, cases `PPPPFPP`
+
+
+## Batch 44 — v149-v150
+
+- Launched: 2026-07-13 08:28 local time
+- State: terminal
+- Finished: 2026-07-13 08:31 local time
+- Service family: `tranberry`
+- Batch file: `data/submission-batches/batch-20260713-062846.json`
+- Sources and submission IDs:
+  - `solutions/tranberry/v149.cpp` — `9bac010e-32f9-47a8-a508-2f5e75ae5857`
+    - Terminal: score `58.749362`, cases `PPPPFPF`
+  - `solutions/tranberry/v150.cpp` — `a518d5da-42f8-49ba-a385-863a227dc2d1`
+    - Terminal: score `90.399696`, cases `PPPPPPP`

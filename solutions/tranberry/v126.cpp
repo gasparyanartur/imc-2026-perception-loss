@@ -1,4 +1,5 @@
-// Durian v097: v096 + vegaSsimEdgePass compares against the original input mesh.
+// Tranberry v126: conservative dual-margin original-reference endgame on the skipped 25k-45k tier.
+// Reserve more runtime and search deeper with explicit per-channel fallback margins.
 // When sourceVerts/sourceFaces are available, render full-view reference Vega images
 // of the original mesh once per pass. localVegaSsimForEdge extracts the same patch from
 // the reference and compares the after-collapse patch to it. Threshold 0.9995.
@@ -217,7 +218,7 @@ if(nV<=10){writeMesh();return;}
 startTime=chrono::steady_clock::now();
 
 if(nV>5000&&nV<=50000){
-if(nV>25000&&nV<=45000){runScreenCoreMid();vegaSsimEdgePass(true);compact();}
+if(nV>25000&&nV<=45000){qemDeadline=HParam_TimeBudgetSeconds-7.2;runScreenCoreMid();vegaSsimEdgePass(true);compact();}
 else runTransactionalScreenMid();
 absoluteQemEndgame();
 writeMesh();return;
@@ -2988,6 +2989,10 @@ bool absoluteQemBudget(const RefScore&safe,const RefScore&cand)const{
     double dropV=inputV<=25000?0.0090:(inputV<=45000?0.0100:0.0095);
     double dropN=inputV<=25000?0.0150:(inputV<=45000?0.0180:0.0220);
     double dropD=inputV<=25000?0.0016:(inputV<=45000?0.0018:0.0016);
+    if(inputV>25000&&inputV<=45000)return cand.finalScore>=max(0.9350,safe.finalScore-0.0045)&&
+           cand.minView>=max(0.9100,safe.minView-0.0060)&&
+           cand.minNormal>=max(0.7600,safe.minNormal-0.0100)&&
+           cand.minDepth>=max(0.9750,safe.minDepth-0.0012);
     return cand.finalScore>=max(0.9105,safe.finalScore-dropF)&&
            cand.minView>=max(0.8750,safe.minView-dropV)&&
            cand.minNormal>=max(0.6200,safe.minNormal-dropN)&&
@@ -3009,7 +3014,7 @@ void restoreSafeContinuation(const vector<Vec3>&safeV,const vector<Face>&safeF,
 
 void continueAbsoluteQem(double ratio){
     screenTier=inputV<=25000?2:(inputV<=45000?3:4);
-    int R=screenTier==2?1024:(screenTier==3?512:768);
+    int R=screenTier==2?1024:(screenTier==3?1024:768);
     if(screenTier==3)buildRasterImportanceTier3(R);else buildRasterImportance(R);
     initFaceWeights();
     targetV=max(10,(int)floor(inputV*ratio));targetV=min(targetV,nV);
@@ -3021,17 +3026,16 @@ void continueAbsoluteQem(double ratio){
 }
 
 void absoluteQemEndgame(){
-    if(inputV>25000 && inputV<=45000)return;
     if(!(inputV>5000&&inputV<=45000)||sourceVerts.empty()||sourceFaces.empty())return;
     if(elapsed()>HParam_TimeBudgetSeconds-6.0){sourceVerts.clear();sourceFaces.clear();return;}
     vector<Vec3>safeV=verts,safeBestV=verts;vector<Face>safeF=faces,safeBestF=faces;vector<double>safeR=compactedRadius,safeBestR=compactedRadius;
     if(safeR.size()!=safeV.size())safeR.assign(safeV.size(),0.0);safeBestR=safeR;
-    double oldDiag=diag,oldHausd=hausd;int R=inputV<=25000?1024:512;
+    double oldDiag=diag,oldHausd=hausd;int R=1024;
     vector<RefImage>ref(6);for(int v=0;v<6;++v)ref[v]=renderReference(sourceVerts,sourceFaces,v,R);sourceVerts.clear();sourceFaces.clear();
     if(elapsed()>HParam_TimeBudgetSeconds-4.2)return;RefScore safeScore=compareToReference(ref,safeV,safeF,R);
-    double minSafe=inputV<=25000?0.9200:0.9180;if(safeScore.finalScore<minSafe)return;
-    double hi=double(safeV.size())/double(inputV),lo=inputV<=25000?0.16:0.075;bool improved=false;
-    for(int it=0;it<4&&elapsed()<HParam_TimeBudgetSeconds-1.25;++it){
+    double minSafe=inputV<=25000?0.9200:0.9400;if(safeScore.finalScore<minSafe)return;
+    double hi=double(safeV.size())/double(inputV),lo=inputV<=25000?0.16:0.08;bool improved=false;
+    for(int it=0;it<5&&elapsed()<HParam_TimeBudgetSeconds-1.25;++it){
         double ratio=0.5*(lo+hi);restoreSafeContinuation(safeV,safeF,safeR,oldDiag,oldHausd);continueAbsoluteQem(ratio);
         if(verts.size()>=safeBestV.size()){lo=ratio;continue;}RefScore cand=compareToReference(ref,verts,faces,R);
         if(absoluteQemBudget(safeScore,cand)){safeBestV=verts;safeBestF=faces;safeBestR=compactedRadius;hi=ratio;improved=true;}else lo=ratio;

@@ -381,3 +381,87 @@ Active direction: extend direct original-mesh SSIM transactions to tier 3 and re
 **Status:** In progress in Tranberry v089/v090. v089 changes medium fingerprints while retaining 95.365420 local compression, slightly improving mean SSIM, Hausdorff, and normal overlap; the giant stress output remains fingerprint-identical to v072.
 
 **Next test:** Extend the same directional anchor to tier 3, the hidden regime believed to be SSIM-limited, and use official evidence to decide whether the freed depth degree of freedom supports structurally deeper simplification.
+
+
+---
+
+## Bucket 13: Curvature-integrated regional sampling density
+
+**Idea:** Estimate discrete normal variation at each vertex, for example `K_v = sum_e w_e (1 - cos(theta_e))`, diffuse it over a small geodesic neighborhood, and convert it into a desired surface area per surviving vertex. Flat regions receive large cells and aggressive reduction; curved, corner, crease, and six-view silhouette regions receive smaller cells. Rank collapses by deviation from this regional density target rather than adding another globally weighted curvature penalty.
+
+**Status:** Completed first prototypes in Tranberry v147-v150; v147 improved the 48k local boundary SSIM at fixed count, but v147/v148 both failed official test 5. Continue with patch-diffused density and quotas. Priority **9.5/10**.
+
+**Why it may break the plateau:** The new 48k boundary fixture reaches 92-96% reduction but loses SSIM badly, showing that raw QEM can reach low counts while distributing its survivors poorly. Density allocation addresses early greedy mistakes and balanced sampling directly.
+
+**Planned experiments:**
+
+- Accumulate area and normal-variation moments through collapse clusters, then penalize removing the last under-budget sample in a high-curvature region.
+- Use robust curvature saturation so noisy triangulation does not classify every vertex as a feature.
+- Couple curvature density to rendered silhouette coverage rather than treating curvature alone as perceptual importance.
+
+## Bucket 14: Feature-aware valence regularization and edge-flip repair
+
+**Idea:** Before the final collapse phase, perform geometry-preserving edge flips that improve triangle quality and drive smooth-region valence toward approximately six. Use curvature-dependent target valence near creases/corners, where regular valence is less important than retaining feature connectivity. Resume QEM after each bounded repair round.
+
+**Status:** v149 collapse-time valence prototype scored 58.749362 (`PPPPFPF`) and is rejected as too globally disruptive; explicit edge-flip repair remains not started. Priority **9.4/10**.
+
+**Why it may break the plateau:** Legal collapses can disappear because early greedy choices create skinny fans and high/low-valence defects. Edge flips change the combinatorial basin without changing vertex count or moving the surface, potentially unlocking safer later collapses.
+
+**Acceptance energy:** Combine valence defect, minimum-angle improvement, curvature alignment, and preservation of manifold edge incidence. Reject flips crossing strong dihedral or axial-silhouette features.
+
+## Bucket 15: Snapshot beam search over endgame graph operations
+
+**Idea:** At the final few percent, retain a small beam of mesh snapshots instead of one greedy state. Expand each state with several low-cost edge collapses, edge flips, and star deletions; score by vertex count plus original-render damage and future legal-collapse count. Keep only a bounded diverse beam.
+
+**Status:** Not started. Priority **9.2/10**.
+
+**Why it may break the plateau:** Tranberry repeatedly reaches count-inert local minima, and forced continuation proves lower-count meshes exist. A short search specifically targets early mistakes and future collapsibility without making the million-vertex main phase globally expensive.
+
+**Implementation constraint:** Search only after a safe snapshot and cap memory/time aggressively. Diversity should include connectivity fingerprints, not merely slightly different vertex positions.
+
+## Bucket 16: Balanced farthest-point retiling on the original surface
+
+**Idea:** Select a curvature/silhouette-weighted Poisson or farthest-point subset on the original surface, then reconstruct a manifold triangulation over that subset. Initialize density from regional target area and refine positions by projection onto the original surface.
+
+**Status:** Backlog / high-risk. Priority **8.1/10**.
+
+**Why it is distinct:** This avoids inheriting the original triangulation and QEM collapse history entirely, directly addressing non-uniform sampling and globally poor greedy basins.
+
+**Risks:** Robust closed-manifold reconstruction, feature preservation, genus preservation, runtime, and Hausdorff certification are substantially harder than local collapse. Prototype only on medium tiers first.
+
+## Bucket 17: Regional projected-volume and area budgets
+
+**Idea:** Partition the mesh into curvature-consistent patches and assign each patch budgets for surface area, axial projected area, depth moments, and signed enclosed volume. Allow individual collapses to violate a local volume plane when neighboring operations compensate, but reject a completed patch whose aggregate moments drift too far.
+
+**Status:** v150 curvature-adjusted surface-area quota prototype was all-pass at 90.399696 but count-inert; patch-level projected-area, depth, and volume budgets remain not started. Priority **8.7/10**.
+
+**Relation to negative evidence:** Tranberry v087/v088 rejected per-collapse signed-volume constraints because they were misaligned with hidden SSIM. Regional budgets are different: they model compensating errors and the evaluator-visible projected morphology rather than freezing every local tetrahedral volume.
+
+## Bucket 18: Reversible progressive simplification with regional quotas
+
+**Idea:** Record a progressive collapse stream with cluster area, curvature, silhouette coverage, and graph-defect metadata. If a region becomes undersampled or blocks future collapses, roll back selected earlier collapses there and spend the vertex budget elsewhere.
+
+**Status:** Not started. Priority **9.0/10**.
+
+**Why it may break the plateau:** A single irreversible heap commits early mistakes. Regional quotas and selective rollback turn simplification into budget allocation across shape regions while retaining the speed of greedy QEM for most operations.
+## Pomegranate family: topology-basin preconditioning
+
+**Status (2026-07-13):** In progress through v032. Canonical v023 is all-pass at 90.399652; no Pomegranate candidate has beaten the 90.436296 champion.
+
+**Idea:** Preserve Tranberry v150's proven QEM queue, tier targets, and giant
+shield, but alter the combinatorial basin with a bounded conflict-free round of
+manifold-safe edge flips. Prefer flips that reduce valence-six defect, avoid
+skinny triangles, shorten the replacement diagonal, and keep both new face
+normals aligned with the old near-planar patch.
+
+- v001 is a conservative valence-first profile. Across 24 default/synthetic/
+  stress scenarios it measured 90.115179% mean compression, 0.852669 mean SSIM,
+  and zero topology defects.
+- v002 accepts a broader quality/diagonal-shortening class. It measured
+  90.117263% mean compression, 0.853144 mean SSIM, and zero topology defects.
+- Both retained the same 1.1M stress fingerprint and the same 48k boundary
+  end-state (92.0% compression, 0.6999 SSIM). This establishes local safety but
+  suggests preprocessing flips are frequently erased by later QEM.
+- v003 proved conservative flips all-pass but score-neutral. v005-v024 exhausted T5 density, carried-budget, screen-moment, local-normal, local-reference, and whole-state QEM continuations; every accepted sub-8% hidden trajectory failed test 5.
+- v025-v032 tested star retriangulation. The default envelope was count-inert; widening it produced extra removals, but even two extra vertices failed hidden test 5 despite slightly better local SSIM.
+- Current direction: stop optimizing the exact T5 cliff and transfer bounded retriangulation/future-collapsibility experiments to the 25-45k tier. Priority **9.0/10**.

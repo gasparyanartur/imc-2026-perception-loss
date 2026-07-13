@@ -15,3 +15,20 @@ ground truth.
 
 - Signed-volume preservation is not aligned with the sensitive medium hidden tier. Tranberry v087 (tier-3-only weak volume plane) was score-neutral/all-pass at 90.433026, while v088 extending a stronger volume plane across small/medium screen tiers failed test 4 (`PPPFPPP`, 76.182865). Preserve rendered projection and normals rather than enforcing global/local volume.
 - Perspective image Jacobians are a promising local surrogate: v091/v095 preserve the exact giant-tier stress fingerprint and identical compression while incrementally improving SSIM/Hausdorff on difficult medium proxies. Persistent camera Jacobians survive memoryless rebuilds and improve the hardest local proxy more than one-shot anchors; official evidence is pending.
+
+
+- The official test-5 mesh lies in the 45k-50k input band. Tranberry v144/v146 activated a 4% absolute-QEM continuation only in this band and changed the outcome from all-pass 90.399696 to `PPPPFPP`/75.049372. Strict 8% continuations remained all-pass and score-identical. Thus the remaining compression frontier is an SSIM/survivor-distribution problem on test 5, not an unreachable phase.
+- A 48,000-vertex synthetic boundary fixture was missing from the evaluator. On it, curvature-density anchors improved SSIM from 0.6961 to 0.7034 at the same 92.1% reduction, while curvature ranking reached 0.6996. Official v147/v148 still failed test 5, so local dihedral curvature is directionally useful but insufficient as a standalone density model.
+- T7 safety depends on algorithm family and whole-source timing, not just the 2.2% huge keep ratio. QEM-only v139-v148 layouts can pass T7; mixed/star v138 and curvature-anchor v147 layouts can still fail it. Final experiments must retain the QEM-only shield and minimize unrelated source-layout changes.
+
+- Tranberry v149/v150 isolate graph ordering from regional budgeting: v149 valence-aware heap ordering failed tests 5 and 7 (`PPPPFPF`), whereas v150 curvature-adjusted vertex-area quotas passed all seven at 90.399696. Broad global reorder is unsafe; regional density should influence bounded endgame selection or patch quotas while preserving the proven queue/layout.
+- Pomegranate v001/v002 show that bounded, vertex-disjoint, near-planar edge
+  flips can preserve manifold topology across 24 local scenarios and leave the
+  1.1M stress output fingerprint unchanged. However, conservative and broader
+  profiles converge to the same 48k boundary output (92.0% reduction, 0.6999
+  SSIM). Pre-QEM connectivity repair is therefore often erased by greedy QEM;
+  the sharper test is endgame flip-collapse pairing after the safe snapshot.
+
+- Pomegranate v005-v032 local/official evidence sharpens the test-5 cliff: the canonical v003 8% boundary state passes, while QEM continuations at 7.5%, render-density/moment variants, and even star retriangulation removing only two additional local boundary vertices fail hidden test 5. Local six-view SSIM can improve while hidden validity worsens, so the current local renderer is not a reliable accept/reject oracle at this cliff.
+- Native 1024 whole-state validation is operationally safe only when it restores the exact canonical lineage (v023, `PPPPPPP`, 90.399652). A 512 proxy and modified safe scaffolds do not transfer.
+- T7 source-layout sensitivity is stronger than a keep-ratio margin alone: Pomegranate helper-bearing layouts failed T7 even at 4% survivors. Treat the full compiled control flow and timing as part of the giant-tier policy.

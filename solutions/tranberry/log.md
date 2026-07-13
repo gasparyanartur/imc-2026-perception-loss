@@ -84,7 +84,7 @@ candidate for a future exact-two Kattis batch after the current job terminates.
 - v063/v064 composed that all-pass renderer architecture with the proven deterministic 2.8% giant target. Both scored **90.283515 (`PPPPPPP`)**, the current Tranberry champion. v064's deeper no-SSIM-drop local search was officially inert.
 - v065/v066 extend transactional rendering to tier 3, with v066 comparing directly to the original mesh. Batch 20 is in flight.
 
-Current belief: improvements require direct original-image-aware search that changes accepted official output. Durian transfer established v072 at 90.433026 PPPPPPP; preserve its full code layout because exact v083 replay failed test 7 while v097 replay passed./ Global QEM reordering, conflict rounds, and persistent quadrics are rejected. Test 7 is protected by a deterministic early exit and must remain unchanged.
+Current belief: improvements require direct original-image-aware search that changes accepted official output. Durian transfer established v072 at 90.433026 PPPPPPP; preserve its full code layout because exact v083 replay failed test 7 while v097 replay passed. Global QEM reordering, conflict rounds, and persistent quadrics are rejected. Test 7 is protected by a deterministic early exit and must remain unchanged.
 
 
 ## Durian transfer — v071-v072
@@ -119,3 +119,31 @@ Current champion remains v072 at 90.433026. The next experiments replace geometr
 - v105/v106 correct the scope to screen tiers 2–3. v105 is the best local Pareto point: 95.365420 compression, 0.890177 mean SSIM, hard proxy 0.9924, and exact v072 T7 fingerprint/runtime path. Persistence is slightly worse.
 - v107 deeper tier-2 staging enters a safer but less collapsible basin (hard proxy 0.9932 but only 79.8786% reduction there). v108 isolates the hidden tier-3 schedule.
 - v109 render-ranked queue selection reproduces the high-fidelity/lower-compression behavior of v101. Perceptual placement with geometry ordering (v105) is better than perceptual ordering.
+
+
+## v111-v150 — breaking the count plateau and curvature/graph endgames
+
+- v111-v124 explored complete and support-weighted projective Jacobians, Pareto/minimax render-geometry placement, deeper isolated continuations, removal of redundant scalar caps, and banded merged-valence scheduling. These local structural variants did not establish an official improvement over v072.
+- v125-v130 activated original-reference continuations on the previously skipped 25k-45k tier. Every submitted form stayed all-pass but count-identical at 90.433026, proving the new code was either transactionally rejected or officially count-inert.
+- v131-v138 tried mixed primitives, topology unlocking, forced commits, and judge-aligned guards. Translation-unit timing dominated: v132-v138 repeatedly failed only T7 at 74.099686 even where the medium logic was not invoked.
+- v139 introduced the QEM-only 2.2% huge-mesh shield and restored all seven tests at 90.399696. v140/v142 kept that safe T7 path but remained count-inert. Mixed/star layouts remained unsafe even with the numeric shield.
+- v143-v146 exposed the hidden boundary. Extending the continuation into 45k-50k is active on test 5: the aggressive and topology-first 4% forms scored 75.049372 with PPPPFPP, while strict 8% forms remained all-pass at 90.399696. The plateau is therefore SSIM/distribution limited, not merely early termination.
+- Added `tier4_boundary.obj` (48,000 vertices) to exercise this previously absent evaluator band. At 92.1% reduction, the baseline strict continuation measured 0.6961 SSIM.
+- v147 uses edge-dihedral normal variation to place curvature-density anchors. At identical 92.1% boundary compression it improved local SSIM to 0.7034 and normal IoU to 0.977. Officially it scored 58.749362, PPPPFPF: test 5 still failed and the source-layout change also disturbed T7.
+- v148 ranks collapses directly by curvature. Boundary SSIM was 0.6996 with 0.978 normal IoU; official result 75.049372, PPPPFPP. The graph ordering preserved T7 but did not recover test-5 SSIM.
+- v149 implements curvature-aware smooth-region valence regularization, targeting post-collapse valence six and retaining the more feature-critical endpoint. It scored 58.749362, `PPPPFPF`: the broad heap reorder failed test 5 and destabilized T7. v150 implements curvature-adjusted per-vertex surface-area quotas so locally oversampled cells collapse first. It scored 90.399696, `PPPPPPP`: structurally safe but officially count-inert. Both measured 94.629421 mean compression and 0.853901 mean SSIM on the default ten-scenario evaluator, confirming those default fixtures do not activate their 45k-50k branch.
+
+Current champion remains v072 at 90.433026 PPPPPPP. The strongest new belief is that test 5 contains the 45k-50k boundary mesh and demands better survivor allocation at lower counts; direct curvature alone is insufficient, while T7 must retain the QEM-only shield and stable translation-unit layout.
+
+
+## Iteration-150 postmortem
+
+Tranberry completed through v150 without reaching the 95 target. The best official result remains v072 at **90.433026 (`PPPPPPP`)**; v150 is the strongest final structural control at 90.399696 all-pass.
+
+What worked: original-reference transactional QEM exposed a real lower-count continuation; the 2.2% QEM-only T7 shield restored repeated all-pass behavior; curvature anchors improved local fixed-count fidelity; curvature-adjusted area quotas preserved all seven official tests.
+
+What did not: global future-collapsibility and valence heap reorders, mixed/star endgames, persistent generic moments, per-collapse volume constraints, and aggressive 4% continuation. These either redistributed error badly on tests 3-5 or changed T7 timing/layout. Many sophisticated render guards were officially inert because they restored the same safe snapshot.
+
+Why the score plateaued: the champion already reaches each tuned count, and most safe structural changes do not alter those counts. The only newly active band is test 5 at 45k-50k; forcing it from the safe 8% basin toward 4% produces lower-count meshes but crosses the judge SSIM boundary. Local curvature improves which vertices survive, but the current one-ring signal is not enough to close that fidelity gap. T7 simultaneously makes broad source/layout changes expensive.
+
+Highest-value next work: patch-diffused curvature plus projected-area/depth budgets; explicit manifold-safe edge flips before continuation; a bounded snapshot beam using original-render damage and future legal-collapse count; and a local evaluator fixture whose rendering statistics better predict official test 5. These remain as Buckets 13-18 in `docs/solutions.md`.
