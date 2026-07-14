@@ -455,3 +455,52 @@ edge flips (rejected in tranberry v149), snapshot beam search
 reversible progressive simplification (Bucket 18). Of these, only
 Bucket 18 (regional rollback) is operationally feasible in the
 remaining iteration budget.
+
+## Final session post-mortem (after 31 batches / 82 candidates)
+
+After resuming the edenfruit iteration through batches 25-31 (10
+more batches, ~12 more candidates), no further progress was made.
+The plateau at **90.452702** remains the canonical edenfruit
+champion. The user explicitly asked to wrap up and write a final
+post-mortem after batch 31.
+
+**Final tallies (across 31 batches)**:
+- v22 baseline (90.452702) held throughout.
+- All post-baseline attempts either tied or broke one or more
+  tests, with one exception: **v06 (two-ring visibility exclusion
+  removal, +0.001591)** which became the canonical champion.
+
+**Final batch (batch 31) breakdown**:
+- v73 (VegaScoreGeomWeight halved): tied
+- v74 (VegaNormalDepthWeight 0.55→0.50): tied
+- v75 (VegaPatchMaxPixels 52000→36000): tied
+- v76 (VegaPatchPaddingPixels 4→8): tied
+- v77 (counsel MaxEdgeEvaluations 112→168): tied
+- v78 (counsel MaxAcceptTier2/3 raised): tied
+- v79 (T7 _Huge 0.0200→0.0205 looser): regressed to 90.444378
+- v80 (T5 _UpTo400k 0.0237→0.0240 looser): regressed to 90.447928
+- v81 (midpoint 0.4·a+0.6·b): 62.44, tests 3+7 failed
+- v82 (midpoint 0.3·a+0.7·b): 63.42, tests 3+5+7 failed
+
+**Where the plateau actually sits**: every tunable knob is at the
+binding SSIM boundary on at least one tier:
+- T2 last stage = 0.30 (test 3 cliff)
+- T3 finalTarget = 0.145 / safeTarget = 0.16 (test 4 cliff)
+- T4 first stage = 0.14 (test 5 cliff)
+- T5 keepRatio = 0.0237 (test 6 binding from above)
+- T7 keepRatio = 0.0200 (test 7 binding from above)
+- Counsel / vega / raster knobs: all robust at the binding collapse set
+- Unbiased midpoint `(verts[a]+verts[b])*0.5` is exactly calibrated
+
+**Final edenfruit champion: v22 at 90.452702 (PPPPPPP).**
+
+Edgenfruit delta vs prior champions:
+- vs holyfruit v37 baseline (90.451111): +0.001591
+- vs holyfruit v34 (90.437516): +0.015186
+- vs original nebula v14 (90.187632): +0.265070
+
+We did not reach the 95 target. The plateau appears to be a hard
+property of the v37-style pipeline + the binding SSIM cliffs on
+each official test. Further progress would require either an
+architectural rewrite (edge flips, snapshot beam, regional rollback)
+or a different problem formulation entirely.

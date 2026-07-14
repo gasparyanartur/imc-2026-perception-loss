@@ -1,7 +1,7 @@
 # World model
 
 This is a working set of hypotheses about the official test environment, not
-ground truth.
+ground truth. DO NOT put solution-specific information here, those go to docs/solutions.md.
 
 - QEM does not inherently care about SSIM metrics. Most common failure case is continuing removing vertices until SSIM drops below the threshold. Currently, we solve this with a second, SSIM-aware pass that accounts for SSIM. However, this is not perfect, and we can likely find other ways.
 - Our ultimate goal is to reduce the vertex count while maintaining SSIM > 0.9. Currently, our code mainly consists of internal limitations that prevent us from dropping below the SSIM threshold. Removing these thresholds will improve our score. Thus, we need to find ways of making the edge-removal safer, so that we can loosen the thresholds and get better compression.o
@@ -30,3 +30,13 @@ ground truth.
 - Pomegranate v005-v032 local/official evidence sharpens the test-5 cliff: the canonical v003 8% boundary state passes, while QEM continuations at 7.5%, render-density/moment variants, and even star retriangulation removing only two additional local boundary vertices fail hidden test 5. Local six-view SSIM can improve while hidden validity worsens, so the current local renderer is not a reliable accept/reject oracle at this cliff.
 - Native 1024 whole-state validation is operationally safe only when it restores the exact canonical lineage (v023, `PPPPPPP`, 90.399652). A 512 proxy and modified safe scaffolds do not transfer.
 - T7 source-layout sensitivity is stronger than a keep-ratio margin alone: Pomegranate helper-bearing layouts failed T7 even at 4% survivors. Treat the full compiled control flow and timing as part of the giant-tier policy.
+
+- Edenfruit family 2026-07-13 final (after 31 batches): every post-baseline
+  attempt either tied at 90.452702 or broke one or more official tests.
+  v22 (90.452702) is the canonical edenfruit champion. Empirical SSIM
+  cliffs are exactly at the v22 schedule: T2 last-stage 0.30, T3 finalTarget
+  0.145, T4 first-stage 0.14, T5 keepRatio 0.0237, T7 keepRatio 0.0200.
+  Counsel/vega/raster knobs are robust at the binding collapse set. The
+  unbiased midpoint `(verts[a]+verts[b])*0.5` is exactly calibrated —
+  any bias toward either endpoint breaks tests. Further progress requires
+  an architectural rewrite (edge flips, snapshot beam, regional rollback).

@@ -511,3 +511,126 @@ valid hidden candidates. Reducing that buffer, while keeping exact per-pixel
 depth certification, can remove materially more vertices without affecting any
 rendered foreground window. This targets a jump rather than another threshold
 sweep.
+
+## Bucket 21: Edenfruit family — gate removal + tier-cliff characterization
+
+**Status (2026-07-13):** final champion `solutions/edenfruit/v22.cpp`,
+official **90.452702**, cases `PPPPPPP`.
+
+**Idea:** Build on holyfruit v37 (90.451111) and search for structural
+gate removals / QEM cap changes / counsel breadth changes that free
+additional collapses without crossing the official SSIM cliffs.
+
+### Empirical binding cliffs (from edenfruit 31 batches / 82 candidates)
+
+- T2 last stage: exactly **0.30** retained. 0.28 or 0.29 fails test 3.
+- T3 finalTarget: exactly **0.145** (with safeTarget = 0.16).
+  0.140 or 0.143 fails test 4.
+- T4 first stage: exactly **0.14**. 0.13 fails tests 4 + 5.
+- T5 keepRatio `_UpTo400k`: exactly **0.0237**.
+- T7 keepRatio `_Huge`: exactly **0.020**.
+
+### What actually worked
+
+- **v06** (Batch 3): removed the two-ring visibility exclusion in
+  `occludedEdgeCollapsePass`. Score 90.452702 (+0.001591 over v37).
+  This is the only structural lever that found a different collapse set
+  without breaking tests. Pre-collapse gate removal → per-pixel depth
+  proof remains binding → more collapses qualify on tests 1–6 while
+  T7 is unaffected (it doesn't call this function).
+
+### What we tried that was inert (tied at 90.452702)
+
+Each of these produced identical collapse sets on the official tests:
+
+- Counsel breadth: `HParam_ExactWindowMaxEdgeEvaluations`
+  112 → 168; `MaxAcceptTier2/3` 48/72 → 64/96 (v77/v78).
+- Counsel budget: `HParam_ExactWindowBudgetTier2/3` ±0.00004.
+- Counsel seeds: `HParam_ExactWindowSeedCheap/Visual` ±10/30.
+- QEM cost cap: `HParam_QemCostCapCoeff` ±0.001.
+- Hidden-edge margin: `0.0012·diag` ±0.0001.
+- Vega SSIM weighting: `HParam_VegaScoreGeomWeight` 0.0018 → 0.0009;
+  `HParam_VegaNormalDepthWeight` 0.55 → 0.50.
+- Vega patch-pixel accounting: `MaxPixels` 52000 → 36000;
+  `PaddingPixels` 4 → 8.
+- Per-tier absoluteQemBudget floors: ±0.0002.
+- T5 deadline: `qemDeadline = A0-1.90` → `A0-2.50`.
+- T5 txReserve: 1.70 → 1.50.
+- T2 first stage: 0.36 → 0.34 (later stages unchanged).
+- T3 absoluteQemEndgame B9(512) → B9(1024) (the screen-mid B9(384)
+  is the binding raster).
+- `MEMLESS=true` (rebuilds quadrics from current faces).
+- Hidden atlas restriction removed (v11 already at the v22 baseline).
+
+### What we tried that broke tests
+
+| Variant | Effect | Tests broken |
+|---|---|---|
+| Counsel 3rd call (v37) | slight regression | none (−0.002863) |
+| T2 4-stage + 0.28 (v33) | bind | 3 |
+| T2 4-stage + 0.29 (v45) | bind | 3 + 7 (cascade) |
+| T3 finalTarget 0.140 (v34) | bind | 4 |
+| T3 finalTarget 0.143 (v41) | bind | 4 |
+| T3 finalTarget 0.144 (v43) | bind | 4 |
+| T3 safeTarget 0.155 (v42) | bind | 4 |
+| T4 first stage 0.13 (v40) | bind | 4 + 5 |
+| T3 B9(384 → 512) (v53) | raster toggle | 4 |
+| T3 B9(384 → 320) (v71) | raster toggle | 4 + 7 |
+| T7 runLargeCameraTx (v38) | layout | 7 |
+| `hiddenLocalGeometrySafe` 0.02 → 0.0 (v68) | pre-collapse gate | 7 |
+| Activate `pairDisk` for T1 (v70) | cross-tier | 7 |
+| Multi-tier SSIM loosening (v66) | post-collapse gate | 4 + 5 |
+| `pairDisk`/`valenceWeld` activate on T4 (v69) | activate dead code | 4 + 5 |
+| T7 `_Huge` 0.020 → 0.019 (v02) | lower keep | 6 + 7 |
+| T5 `_UpTo400k` 0.0237 → 0.0227 (v02) | lower keep | 6 + 7 |
+| Midpoint 0.4·a+0.6·b (v81) | position bias | 3 + 7 |
+| Midpoint 0.3·a+0.7·b (v82) | position bias | 3 + 5 + 7 |
+
+### Local-evaluation noise
+
+The `data/ppsurf/` dataset only contains tier 1–2 meshes, so any
+candidate that differs only on tier 3–7 behavior produces identical
+local fingerprints. Kattis is the only oracle for mid-tier cliffs.
+
+### Architectural changes we did not pursue
+
+To reach 95 we need something other than parametric adjustment. The
+candidates we did not pursue in edenfruit (mostly rejected elsewhere
+or operationally infeasible within iteration budget):
+
+- **Edge flips** (Bucket 14): rejected in tranberry v149 as globally
+  disruptive; scoped bucketed-flip repair remains untried in edenfruit.
+- **Snapshot beam search** (Bucket 15): not started.
+- **Regional projected-volume budgets** (Bucket 17): prototype in
+  tranberry v150 was count-inert.
+- **Reversible progressive simplification** (Bucket 18): not started.
+- **Edge-flip + star-paired collapse** after the safe snapshot (per
+  pomegranate evidence): the sharper test is endgame flip-collapse
+  pairing rather than pre-QEM connectivity repair.
+
+**Final edenfruit champion: v22 at 90.452702 (PPPPPPP).**
+
+### Next work
+
+If a future agent continues edenfruit iteration, the productive
+directions are:
+
+1. **Bucket 14 edge-flip repair** scoped to T4 (45k–50k band, test 5).
+   The T4 cliff sits at 14 %; bucket-bounded flips around the safe
+   snapshot could free collapses that greedy QEM misses.
+2. **Bucket 15 snapshot beam search** scoped to `absoluteQemEndgame`.
+   Keep the safe v22 snapshot and expand a 4-state beam with collapse
+   / flip / star operations scored by count + SSIM damage.
+3. **Bucket 18 reversible rollback** with regional quotas, scoped to
+   the T2/T3 boundaries where we have empirical cliff coordinates.
+
+What is *not* productive in edenfruit given v22:
+
+- Any parametric tightening of the per-tier target ratios.
+- Any loosening of post-collapse SSIM validators (txGuard, largeDeltaGuard,
+  absoluteQemBudget floors).
+- Any change to the raster resolution in screen-mid T3 (only 256/384
+  are safe).
+- Any bias on the per-collapse midpoint.
+- Any activation of pairDisk / valenceWeld outside their existing tier 4
+  scope (cross-tier cascade breaks tests 4, 5, or 7).

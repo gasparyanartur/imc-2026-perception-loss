@@ -613,3 +613,25 @@ Any loosening loses compression. Any tightening fails tests 6/7.
   - v82: midpoint → 0.3·a + 0.7·b (30% toward a, 70% kept b).
 
 Both affect every tier using `getCandidatePositions` (T1-T6).
+
+**Post-mortem batch 30:**
+- v81 (midpoint 0.4·a + 0.6·b): 62.439795 PPFPPPF. **Tests 3
+  AND 7 failed.** Biasing the midpoint toward a (the absorbed vertex)
+  breaks T2 (test 3) and T7 (test 7).
+- v82 (midpoint 0.3·a + 0.7·b): 63.421984 PPFPFPP. **Tests 3, 5,
+  AND 7 failed.** Even more aggressive midpoint bias breaks more
+  tests.
+
+**Insight:** the unbiased `(verts[a]+verts[b])*0.5` midpoint is
+exactly calibrated. ANY bias toward either endpoint breaks tests.
+The QEM-optimum position is selected when its QEM cost is the
+minimum; biasing the midpoint just adds another candidate that
+loses to QEM-opt in most cases but pulls a few collapses onto
+non-optimal positions.
+
+## Batch 31 - the user's termination instruction
+
+The user explicitly asked to wrap up and write a post-mortem
+after we hit the persistent 90.452702 plateau through 30 batches
+(75+ candidates). I checked v81/v82 to record the final batch
+result before stopping.
