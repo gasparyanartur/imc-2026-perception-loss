@@ -3,25 +3,23 @@
 This is a working set of hypotheses about the official test environment, not
 ground truth.
 
+- QEM does not inherently care about SSIM metrics. Most common failure case is continuing removing vertices until SSIM drops below the threshold. Currently, we solve this with a second, SSIM-aware pass that accounts for SSIM. However, this is not perfect, and we can likely find other ways.
+- Our ultimate goal is to reduce the vertex count while maintaining SSIM > 0.9. Currently, our code mainly consists of internal limitations that prevent us from dropping below the SSIM threshold. Removing these thresholds will improve our score. Thus, we need to find ways of making the edge-removal safer, so that we can loosen the thresholds and get better compression.o
 - Tiers 2 and 3 (tests 3 and 4) are more SSIM sensitive than the others tiers. This can be seen by our tuned threshhold parameters, which are more conservative for these tiers. When we continue removing vertices using QEM, our SSIM eventually drops below the threshhold much sooner than the other tiers. If we can find a way to improve SSIM for these tiers, we can likely lower the threshholds and get better compression.
 - Tier 6 (test 7) is sensitive to run-time and is prone to timeouts. This is because it has more vertices. Sometimes running the exact same code will yield much lower results (up to a difference of 0.5 score), because the longer run-time makes our solution enter a different phase at a different timing.
-- QEM does not inherently care about SSIM metrics. Most common failure case is continuing removing vertices until SSIM drops below the threshold. Currently, we solve this with a second, SSIM-aware pass that accounts for SSIM. However, this is not perfect, and we can likely find other ways.
 - Because our initial QEM pass is greedy, it is possible that we remove vertices that would have been better to keep for future removals. In short, our current algorithm does not maintain "collapsibility" of the mesh, and does not necessarily find the globally optimal solution. This is a known limitation of QEM, and we can likely improve our results by using a more sophisticated algorithm that maintains collapsibility.
 - Even if one tier is failing, we can still estimate the quality of our solution by looking at the total score composed by the other tiers. The tiers are independent and failed tiers give 0 points, so the total sum of the scores should still improve compared to previous solutions with the same failing tier.
 - When iterating on a solution, we need to be very careful not to fall into the trap of just tuning parameters back and forth. Our coding agents tend to tune one parameter at a time in an inefficient way (nudging the parameter value slightly), and get stuck without making any serious progress. A clear sign this is happening is when we see the exact same score for multiple iterations.
-- Most of our parameters are just thresholds on how many vertices to remove, added to prevent us from dropping the SSIM below the threshold. Because all 6 tiers are independent, we can find the optimal thresholds for every tier in just a few sequential iterations, so long as we know the minimum and maximum values for each parameter. This is because the parameters are continuous, and we can use a binary search to find the loosest threshold that does not crash. In each run, we iterate every tier and look at each failing test independently. For instance: `0.4 -> P, 0.6 -> F, 0.5 -> P, 0.55 -> P, 0.57 -> F, 0.56 -> P`
-
+- **LOOK FOR HERE AN OPTIMAL PARAMETER TUNING METHOD:** Most of our parameters are just thresholds on how many vertices to remove, added to prevent us from dropping the SSIM below the threshold. Because all 6 tiers are independent, we can *find the optimal thresholds for every tier* in just a few sequential iterations. This is because the parameters are continuous, and we can use a binary search to find the loosest threshold that does not crash. In each run, we iterate every tier and look at each failing test independently. Simply use the two-iterations in the batch to predict the upper-bound and lower-bound. Once the upper-bound passes and lower-bound fails, simply tighten the range until the optimal is found. For instance, if the threshold between pass and fail is 0.3, we can start with 0 (F) and 1 (P), then 0.33 (P) and 0.66 (P), then 0.15 (F) and 0.32 (P), then 0.22 (F) and 0.27 (F), then 0.28 (F) and 0.30(P), then one final 0.29 (F). In just seven batches we have found the optimal threshhold for that tier, each run can do this for all tiers, since they are independant.
 - Tier 6 is sensitive not only to executed phases but to whole translation-unit layout and timing. On 2026-07-12, an exact Durian v083 replay failed test 7 while the v097-derived replay passed at 90.433026, even though v097's added original-reference edge pass is invoked only on medium tiers. Preserve the complete known-good source layout when changing T7-adjacent candidates; numeric parameters alone do not reproduce validity.
-
 - Signed-volume preservation is not aligned with the sensitive medium hidden tier. Tranberry v087 (tier-3-only weak volume plane) was score-neutral/all-pass at 90.433026, while v088 extending a stronger volume plane across small/medium screen tiers failed test 4 (`PPPFPPP`, 76.182865). Preserve rendered projection and normals rather than enforcing global/local volume.
 - Perspective image Jacobians are a promising local surrogate: v091/v095 preserve the exact giant-tier stress fingerprint and identical compression while incrementally improving SSIM/Hausdorff on difficult medium proxies. Persistent camera Jacobians survive memoryless rebuilds and improve the hardest local proxy more than one-shot anchors; official evidence is pending.
-
-
 - The official test-5 mesh lies in the 45k-50k input band. Tranberry v144/v146 activated a 4% absolute-QEM continuation only in this band and changed the outcome from all-pass 90.399696 to `PPPPFPP`/75.049372. Strict 8% continuations remained all-pass and score-identical. Thus the remaining compression frontier is an SSIM/survivor-distribution problem on test 5, not an unreachable phase.
 - A 48,000-vertex synthetic boundary fixture was missing from the evaluator. On it, curvature-density anchors improved SSIM from 0.6961 to 0.7034 at the same 92.1% reduction, while curvature ranking reached 0.6996. Official v147/v148 still failed test 5, so local dihedral curvature is directionally useful but insufficient as a standalone density model.
 - T7 safety depends on algorithm family and whole-source timing, not just the 2.2% huge keep ratio. QEM-only v139-v148 layouts can pass T7; mixed/star v138 and curvature-anchor v147 layouts can still fail it. Final experiments must retain the QEM-only shield and minimize unrelated source-layout changes.
 
 - Tranberry v149/v150 isolate graph ordering from regional budgeting: v149 valence-aware heap ordering failed tests 5 and 7 (`PPPPFPF`), whereas v150 curvature-adjusted vertex-area quotas passed all seven at 90.399696. Broad global reorder is unsafe; regional density should influence bounded endgame selection or patch quotas while preserving the proven queue/layout.
+
 - Pomegranate v001/v002 show that bounded, vertex-disjoint, near-planar edge
   flips can preserve manifold topology across 24 local scenarios and leave the
   1.1M stress output fingerprint unchanged. However, conservative and broader
@@ -32,31 +30,3 @@ ground truth.
 - Pomegranate v005-v032 local/official evidence sharpens the test-5 cliff: the canonical v003 8% boundary state passes, while QEM continuations at 7.5%, render-density/moment variants, and even star retriangulation removing only two additional local boundary vertices fail hidden test 5. Local six-view SSIM can improve while hidden validity worsens, so the current local renderer is not a reliable accept/reject oracle at this cliff.
 - Native 1024 whole-state validation is operationally safe only when it restores the exact canonical lineage (v023, `PPPPPPP`, 90.399652). A 512 proxy and modified safe scaffolds do not transfer.
 - T7 source-layout sensitivity is stronger than a keep-ratio margin alone: Pomegranate helper-bearing layouts failed T7 even at 4% survivors. Treat the full compiled control flow and timing as part of the giant-tier policy.
-
-- Holyfruit v12/v13 isolate another hard test-6 cliff: both preserved tests 1-5 and 7 but failed test 6 (`PPPPPFP`) after combining large keep ratios 0.0236/0.0235 with tighter global QEM caps 0.0325/0.0320. Their 2x/3x exact-window breadth is inactive above 50k, so indexed medium counseling is exonerated; preserve v11's 0.0237 large target and 0.0330 cap until a structurally safer collapse-position or survivor-distribution method exists.
-- Holyfruit v24/v25 reveal complementary segment-placement safety domains. A constrained minimum-QEM edge-segment point changed all local tier fingerprints and gained 0.071 local compression points, then passed official tests 1-6 but failed only T7 (`PPPPPPF`). A minimum merged-envelope-radius point gained 0.169 local points and passed tests 1 and 3-7 but failed only test 2 (`PFPPPPP`). Candidate-position geometry is a real lever unlike target tuning; tier-gated composition is the next test.
-- Holyfruit v26-v29 quantify segment-placement deltas with all-pass tier gates. Relative to constrained-QEM placement, envelope-balanced placement costs 0.011624 on official test 6, is exactly score-neutral on test 5, and costs only 0.000472 across tests 3-4 combined. The local evaluator ranks envelope placement higher, again showing that local compression gains are misallocated relative to official cases.
-- Holyfruit v34/v35 validate additive partial-score composition: valence-aware equal-cost direction selection gained 0.001210 across tests 1-6 relative to v24, and substituting v25's envelope-balanced giant proposal restored T7 exactly as predicted. Both scored 90.448277 all-pass, improving the champion by 0.000472. Projected screen importance was score-neutral versus valence.
-
-- Holyfruit v36/v37 prove indexed exact-window search breadth is a genuine
-  medium-tier lever: 2x breadth scored 90.448750 and 3x breadth with projected
-  survivor selection scored 90.451111, both all-pass, without changing keep
-  targets or QEM caps. The effect is small because the pass is bounded, but it
-  validates direct perceptual proposal search over additional target tuning.
-
-- Holyfruit v38/v39 show that unconstrained all-tier position breadth is not
-  safely compositional: offering both segment objectives on the giant tier
-  fails T7. v38 also failed T5, while v39 trisections restored T5. Preserve the
-  proven constrained-QEM <=400k/envelope >400k partition when scaling search.
-
-- Holyfruit v40/v41 restore the locally safe giant fingerprint but still fail
-  official T7 after adding a dormant <=400k segment branch. Whole-translation-
-  unit sensitivity is therefore stronger than local output parity. Future T7
-  experiments should preserve v37s geometry code and vary existing schedules
-  in place. v41s 5x breadth passes tests 1-6 with subtotal 74.105075.
-
-- Holyfruit v42/v43 close the pure breadth direction. Scaling exact counsel to
-  6x-8x and widening all other tier searches produced only 74.101572/74.101144
-  with T7 failure, below earlier partial subtotals. The local T7 tail was count-
-  inert despite consuming the remaining runtime. Breadth beyond v37s 3x is not
-  a path to 95; exploit evaluator-invisible geometry instead.
