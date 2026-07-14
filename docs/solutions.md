@@ -634,3 +634,254 @@ What is *not* productive in edenfruit given v22:
 - Any bias on the per-collapse midpoint.
 - Any activation of pairDisk / valenceWeld outside their existing tier 4
   scope (cross-tier cascade breaks tests 4, 5, or 7).
+
+---
+
+## Gala family: time, ledger, fasting, restoration, and the triune filter
+
+**Status (2026-07-14):** Not started. Brainstorm seeded from five biblical
+passages. Each bucket below carries the passage it is metaphorically grounded
+in, then is restated in concrete algorithmic terms a coding agent can pick up.
+The Gala family deliberately stays out of edenfruit's parametric plateau: every
+bucket targets a *structural* weakness (premature greed, irreversibility,
+single-metric obsession, neighbor disharmony, lack of long-horizon audit).
+
+---
+
+### Gala Bucket A — "A thousand years ... like a watch in the night" (Watch-phase re-auditing)
+
+**Idea:** Treat the million-vertex collapse stream as a long night divided
+into discrete watches. After every fixed watch (e.g. every N collapses or
+every K vertices removed), pause greedy progress and re-audit a *random
+sample* of recently committed collapses against the current local six-view
+foreground masks. Reversions are committed via a bounded reversible queue.
+This amortizes the SSIM check across the run instead of paying it all at the
+endgame cliff.
+
+**Concrete algorithmic restatement:**
+- A `Watches` structure records each collapse with (vertex-id, edge-id,
+  replacement position, committed SSIM impact estimated from a per-camera
+  11x11 foreground-window sample). On entering a new watch, replay the last
+  watch's collapses against the *current* mesh's six-view occlusion atlas.
+- If a collapse's actual foreground-window contribution is now worse than
+  the estimated budget, demote it (push back to the heap) and continue.
+  Otherwise flush the watch's records.
+- Watch length is a tier parameter: short watches on SSIM-sensitive tiers
+  (T2/T3, ~1k collapses), long watches on T7 (~25k).
+- Carries forward Bucket 18 (regional quotas / reversible rollback) but
+  *schedules* it rather than applying it after the fact.
+
+**Hypothesis:** edenfruit's binding cliffs come from accumulated irreversible
+greed. A periodic re-audit should let us spend the budget more evenly and
+possibly loosen `absoluteQemEndgame` slightly on the mid tiers.
+
+**Priority:** 9.0/10.
+
+**Open questions:**
+- Is the per-watch re-audit affordable at 1.1M vertices without blowing the
+  T7 wall-clock budget?
+- Does reversion create cascading invalidations of quadric neighbors?
+- Is "random sample" sufficient, or should watches re-audit in geometric
+  front-to-back order?
+
+---
+
+### Gala Bucket B — "Book of life" identity ledger (vertex-irreplaceability registry)
+
+**Idea:** Maintain a *Book of Life*: a per-vertex ledger entry recording
+whether the vertex is currently irreplaceable for the rendered foreground.
+A vertex is "written in" when (a) it is on a six-view silhouette boundary,
+OR (b) it lies within one 11x11 SSIM window of a foreground pixel whose
+removal would orphan that pixel's only contributing triangle. A vertex is
+"blotted out" only if a stress test proves two independent replacement
+candidates can both reproduce its contribution within a small epsilon.
+
+**Concrete algorithmic restatement:**
+- During initial mesh preprocessing, compute six foreground silhouettes at
+  raster 1024 and mark silhouette-ring vertices as `written=true`.
+- Maintain a counter `m` per vertex: the number of distinct future
+  replacements (other vertices in its 2-ring) that already match its
+  barycentric contribution to the foreground mask to within an angular
+  epsilon on the dominant camera. When `m >= 2`, the vertex becomes a
+  candidate for blotting-out (collapse eligibility).
+- For each collapse, require that the resulting mesh still has at least one
+  replacement vertex written in the book for every pixel the collapsed
+  vertex contributed to.
+- The ledger is updated incrementally: every successful collapse frees the
+  two endpoint entries; every reversion restores them.
+
+**Hypothesis:** the current QEM-only cost discards geometrically promising
+edges whose collapse is locally safe but globally important. A ledger makes
+"global importance" a first-class signal and may unlock collapses the queue
+currently rejects for lack of confidence.
+
+**Priority:** 9.2/10.
+
+**Open questions:**
+- Is the per-vertex foreground contribution cheap to update incrementally,
+  or do we need a full six-view recompute per collapse?
+- How does the ledger interact with the tier-specific cliff schedule from
+  edenfruit v22?
+- Can the ledger be approximated by a fast proxy (visible area + curvature)
+  that matches true foreground contribution ≥95% of the time?
+
+---
+
+### Gala Bucket C — "Do not look somber when you fast" (silent / amortized collapses)
+
+**Idea:** Stop paying the SSIM safety tax up front in every collapse
+proposal. Instead, batch-collapse a *silent phase* in regions whose entire
+2-ring neighborhood is provably below a perceptual saliency floor (flat,
+back-facing, far from any silhouette). The collapses are made in one wave
+without per-collapse SSIM checking; the safety is *structural* — the region
+is invisible. Revert the whole wave only if a downstream rendered check
+shows a foreground pixel changed in any of the six views.
+
+**Concrete algorithmic restatement:**
+- Define `saliency(v)` = max over six cameras of (visible-area in 11x11
+  window) × (normal-departure from neighborhood mean). Vertices with
+  saliency below a threshold `tau_silent` are eligible for the silent phase.
+- Perform a normal-predicated silent collapse pass: collapse edges between
+  low-saliency vertices using a relaxed QEM cost (no normal-flip penalty,
+  no dihedral penalty), subject only to manifold, area, and Hausdorff-envelope
+  guards.
+- After the silent pass, render the six views and compare to the
+  pre-silent-pass atlas. If any pixel changed in foreground (normal or
+  depth), revert the silent pass entirely (rebuild from snapshot).
+- This is *amortized*: per-collapse cost is near zero; the single
+  foreground-check covers all collapses at once.
+
+**Hypothesis:** edenfruit's gate removals prove there are real visible wins
+locked behind conservatism. But each gate is removed individually. The
+silent-phase concept removes safety from *every* low-saliency collapse at
+once, possibly yielding a multiplicative gain on flat-region tiers (T1, T6,
+parts of T7).
+
+**Priority:** 9.3/10.
+
+**Open questions:**
+- What is the right `tau_silent` per tier? Likely tier-dependent.
+- Does a single bulk revert lose too much work if it triggers? Need a
+  partial-revert mode (revert only the connected component that flipped a
+  foreground pixel)?
+- Does the silent phase interact well with the giant-tier shield, or does
+  it break T7's layout sensitivity?
+
+---
+
+### Gala Bucket D — "Strive for full restoration ... live in peace" (reconciliation / repair round)
+
+**Idea:** After the safe snapshot (v22-equivalent), perform a bounded
+*reconciliation round*: scan for local defects (high-low valence, skinny
+triangles, dual-frontier discontinuities) and resolve them via
+vertex-pair *encouragement* (one mind) — pick a small connected component of
+defective vertices, propose 2–4 alternative topologies (edge flips + paired
+collapses), and pick the one that minimizes total defect energy while keeping
+vertex count and Hausdorff fixed. The round is purely combinatorial on the
+already-simplified mesh.
+
+**Concrete algorithmic restatement:**
+- Define defect energy = `α·valence_deviation_from_6
+  + β·min_angle_violations + γ·boundary_edge_count
+  + δ·dual_frontier_length`.
+- Cluster defective vertices into small components (≤8 vertices each) using
+  a BFS on shared edges. For each component, enumerate up to K alternative
+  manifold triangulations (edge flips, vertex splits, paired collapses).
+- Score each alternative by defect energy and silhouette preservation; pick
+  the best. If none beats the current mesh by margin `ε`, leave it.
+- Apply at most one round, post-snapshot. The goal is to *unlock* further
+  collapses (by removing defects that block them) without changing the
+  vertex count significantly.
+
+**Hypothesis:** legal collapses disappear because greedy choices create
+defects that the cost function doesn't see. Reconciliation cleans the
+basin without paying the cost in vertices, enabling a second pass of QEM
+to find collapses the first pass missed. This is Bucket 14's "encourage
+one another" variant but explicitly bounded to small components and
+performed *after* the safe snapshot.
+
+**Priority:** 9.1/10.
+
+**Open questions:**
+- How many defects does v22 actually have? Local profiling needed.
+- Is the bounded enumeration affordable, or do we need a smarter search
+  (e.g. valley-restricted flips only)?
+- Does the round help T4/T5 most, or does it benefit T1/T7 disproportionately?
+
+---
+
+### Gala Bucket E — "Lust of the flesh, the lust of the eyes, the pride of life" (triune filter)
+
+**Idea:** Reject any collapse criterion that optimizes only one of the three
+metrics (geometric / perceptual / structural). A collapse is permitted only
+when *all three* signals agree the vertex is dispensable. This counters the
+"single-metric obsession" that edenfruit explicitly identifies as its
+plateau cause.
+
+**Concrete algorithmic restatement:**
+- **Flesh** = raw geometric signal: area-weighted Hausdorff envelope
+  contribution and a per-cluster shape-distortion term (Hoppe-style).
+- **Eyes** = perceptual signal: six-view foreground-window SSIM ledger
+  contribution (Bucket B's infrastructure).
+- **Pride** = structural signal: vertex's role in the combinatorial
+  lattice — degree, defect class, future-collapse-count estimate.
+- A collapse candidate passes the triune filter only if its normalized
+  rank in each of the three signals is above the candidate's rank in the
+  *unfiltered* queue. In other words, it must be simultaneously a
+  geometrically, perceptually, and structurally good idea.
+- For ties, prefer the candidate that is most balanced across the three
+  ranks (smallest max-rank deviation). This is a Pareto-style filter.
+
+**Hypothesis:** edenfruit's parametric plateau shows that tightening any one
+gate breaks tests, while loosening any one gate breaks tests in the opposite
+direction. The constraints are *jointly* binding; the triune filter
+explicitly enforces joint agreement, which is precisely what greedy single-
+metric QEM cannot do. It may even allow *looser* individual gates because
+the agreement requirement absorbs the variance.
+
+**Priority:** 9.4/10.
+
+**Open questions:**
+- Is the triune filter best implemented as a pre-filter (drop bad
+  candidates from the heap) or as a final acceptance gate?
+- How are the three signals normalized? Each has different units and
+  scales; need to choose a robust rank-vs-value encoding.
+- Does this compose with the silent phase (Bucket C), or are they
+  orthogonal and additive?
+
+---
+
+### Gala synthesis
+
+The five Gala buckets are intentionally orthogonal but compose-able:
+
+- **A (watches)** schedules when we re-audit.
+- **B (book of life)** decides which vertices are *currently* irreplaceable.
+- **C (silent fast)** removes the per-collapse safety tax from provably
+  invisible regions.
+- **D (restoration)** cleans the combinatorial basin after the snapshot.
+- **E (triune filter)** enforces joint agreement across the three signal
+  families.
+
+A first Gala prototype could implement only B + E (the most composable pair)
+on top of edenfruit v22's locked schedule: use B to decide which vertices
+may be collapsed, and E to break ties. If that succeeds, layer in C for the
+silent phase, then D as a post-snapshot round. A is last because it requires
+a stable reversal mechanism.
+
+**First concrete experiment to propose (for an iterating agent):**
+- Copy `solutions/edenfruit/v22.cpp` to `solutions/gala/v1.cpp`.
+- Implement Bucket B (book of life) as a *read-only* signal: compute the
+  ledger once at startup, expose `isWritable(v)` to the collapse cost, and
+  add it as a multiplicative penalty `1 / (1 + ledgerCount(v))`.
+- Submit and compare to edenfruit v22. Expected: identical or slightly worse
+  if the ledger over-blocks; expected better if the ledger unblocks exactly
+  the right edges.
+
+**Risks / non-goals:**
+- Gala does **not** aim to retune edenfruit's per-tier ratios. The edenfruit
+  v22 schedule is treated as ground truth.
+- Gala does **not** change the raster resolution, the midpoint bias, or the
+  giant-tier shield.
+- Gala does **not** attempt neural, voxelization, or global remeshing —
+  those remain rejected per Buckets 5, 6, 7, 16.

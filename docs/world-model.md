@@ -40,3 +40,83 @@ ground truth. DO NOT put solution-specific information here, those go to docs/so
   unbiased midpoint `(verts[a]+verts[b])*0.5` is exactly calibrated —
   any bias toward either endpoint breaks tests. Further progress requires
   an architectural rewrite (edge flips, snapshot beam, regional rollback).
+
+- Gala v2 (Bucket B ledger as a reordering multiplier on QEM cost):
+  broke tests 5 and 7 with score 58.838782. Local fingerprint showed
+  compression -0.23pp and SSIM +0.033, suggesting the ledger works as
+  intended (silhouette mass preserved) but the reordering itself
+  breaks cliffs because the cliffs were tuned to the existing collapse
+  order. T5 in particular uses silhouette edges as cheap budget spenders;
+  forcing them down in the heap starves the budget. T7 is sensitive to
+  any cost change in the giant tier. **Lesson:** a reordering-only
+  ledger breaks cliffs; the ledger must be used to *lower target ratios
+  selectively*, not reorder.
+
+- Gala v3 (giant-tier occludedEdgeCollapsePass): tied 90.452702. Tied
+  with v22 because the giant tier's `vegaSsimStarPass x3` covers the
+  same ground.
+
+- Gala v4 (1-ring centroid placement): broke tests 5 and 7. Same pattern
+  as v2: cost function / placement changes break cliffs.
+
+- Gala v5 (T5 vega+counsel): **90.45279, +0.000088 vs v22** — within
+  noise but the only positive move. Adding proven-safe SSIM-gated
+  passes to under-served T5 finds tiny improvements.
+
+- Gala v6 (T5 occludedEdgeCollapsePass): -0.000575 (slight regression).
+  Adding the hidden pass to T5 produces a worse collapse set than v22's
+  empty T5 hidden pass.
+
+- Gala v7 (counsel nearLocked removal): tied. The v06 analogue didn't
+  reproduce v06's +0.001591 success — the binding gate in counsel is
+  the SSIM gate, not the lock exclusion.
+
+- Gala v8 (counsel overlap removal): broke tests 4 and 5. Removing
+  the overlap check lets too many overlapping proposals through the
+  per-proposal SSIM gate; their cumulative effect breaks SSIM.
+
+- Gala v9 (third T2 counsel call): broke test 7. The extra counsel
+  call changes heap state enough to push T7 into a different timing
+  regime.
+
+- Gala v10 (v5 + T5 star pass): tied at 90.45279. The third T5 pass
+  didn't find more collapses; the v5-level improvement is the max.
+
+- Gala v11 (T6 vega+counsel, v22-base): broke test 7. Even though the
+  injection was gated to T6 only (`inputV<=1000000`), T7 broke.
+  Hypothesis: adding conditional branches on T7's path shifts binary
+  layout enough to break T7 timing.
+
+- Gala v12 (T7 vega+counsel, v3-base): tied at 90.452702. Built on
+  v3 (which has the giant-tier hidden pass), the T7-targeted call
+  sites didn't break T7. The v11 breakage was specific to v11's anchor
+  pattern, not a general "T7 hates new passes" rule.
+
+**Strategy going forward:** build new candidates on v3 (or other
+proven-safe bases) so the binary layout is stable. Avoid adding
+conditional branches gated `false` on T7's path.
+
+- Gala v15 (T5 vega x2 + counsel x2 + star x1): **+0.000132 champion**
+  at 90.452834. The only positive direction found after the v22
+  plateau. The 2nd vega call (v15 vs v10) was the specific delta that
+  added the improvement.
+
+- Gala v18-v25: all TIED with v15. The T5 ceiling at 90.452834 is
+  firm across multiple variations: 3rd vega, 3rd counsel, 2nd star,
+  RootNudge profile change, mid-tier extra vega, lower txReserve.
+
+- Gala v21 (v15 + 2nd runLargeCameraTx): BROKE tests 5 and 7. Complex
+  pass additions (rendering + bisection + star work) interact badly
+  with the existing pipeline.
+
+- Gala v20 (v3 + T5 changes): TIED. T5 saturation dominates; v3's
+  giant-tier addition is independent but doesn't add SSIM-safe
+  collapses.
+
+**Current state:** v15 at 90.452834 is the empirical local optimum
+on the current architecture. Further T5 changes don't help. T6/T7
+additions break tests. The path to 95 likely requires a genuine
+architectural rewrite (edge flips, snapshot beam search, regional
+rollback) per the world model.
+
+
