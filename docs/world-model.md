@@ -120,3 +120,140 @@ architectural rewrite (edge flips, snapshot beam search, regional
 rollback) per the world model.
 
 
+
+- Gala v30/v31 activated the dormant neighbor-disjoint Vega-gated tail batch
+  on every tier. Both scored 74.108159 (`PPPPPPF`): tests 1-6 passed and T7
+  failed, independent of an 11.8 vs 11.0 second start and 262144 vs 131072 edge
+  scan. Reachable common tail control flow is unsafe for the giant tier; strict
+  per-tail geometry gates were the final test: v32/v33 also scored 74.108159
+  (`PPPPPPF`). The identical failure under strict geometry and an 80% envelope
+  reserve proves reachable tail control flow/layout is unsafe; retire this direction.
+
+- Gala v44/v45 composed Pomegranate all-tier flip profiles with the Gala
+  0.0237/0.0200 envelope. v44 profile 3 failed T7 at 74.092703 (`PPPPPPF`);
+  v45 profile 4 passed all seven at 90.425954. A one-flip near-exact T2 budget
+  plus broader quality-based flips elsewhere is source-layout safe, but remains
+  0.026880 below Gala v15. Bounded connectivity repair is feasible; its current
+  survivor distribution does not improve the champion.
+
+
+- Gala v46/v47 replaced dormant v15 code with the same profile-4 flip repair.
+  v46s standard budget remained all-pass at 90.4395, but v47s reduced budget
+  failed T7 at 74.131433 (`PPPPPPF`). The surprising direction establishes
+  that fewer flips/work are not monotonically safer: exact scan/accept budgets
+  alter giant-tier timing and survivor order. Preserve the standard profile-4
+  envelope as the safe structural control; Gala v15 remains champion.
+
+
+- Gala v48/v49 changed only profile-4 flip ranking to prefer a low-QEM new
+  diagonal. v48 standard breadth failed T7 at 74.10594 (`PPPPPPF`), while
+  v49 reduced breadth passed T7 but failed T6 at 74.166247 (`PPPPPFP`). Flip
+  ordering and breadth move the failure between hidden tiers; future diagonal
+  midpoint cost is not a safe proxy for later collapsibility.
+
+
+- Gala v50/v51 partitioned standard profile-4 flips by T5. v50 T5-only
+  scored 90.439972; v51 all-non-T5 scored 90.452362. Both passed. Relative
+  to v15, their losses (0.012862 and 0.000472) sum exactly to v46s 0.013334
+  all-tier loss. Flip effects are tier-additive here, and T5 accounts for
+  96.5% of the regression.
+
+
+- Gala v52 T5-only future ranking still failed T7 (74.106412), proving
+  dormant expression/layout changes can cross the giant cliff even behind an
+  immediate tier return. v53 reduced T5 breadth passed at 90.440238 but
+  recovered only 0.000266 versus standard T5 flips. T5 pre-QEM flips are
+  basin-regressive regardless of breadth and are retired.
+
+
+- Gala v54/v55 added alternate T2 endgame orderings under the existing
+  original-render audit. Low-valence v54 tied v15 exactly; high-valence v55
+  failed T7 at 74.119495 even though its mode is zero outside odd T2 trials.
+  Audited snapshot search can be score-neutral, but source-layout direction
+  remains independently decisive for T7.
+
+
+- Gala v56/v57 strengthened the dormant alternate T2 valence factor; both
+  failed T7 identically at 74.119495. A larger code-level perturbation makes
+  even the low-valence direction unsafe before its audited T2 branch matters.
+  The compact valence-beam direction is retired.
+
+
+- Gala v58/v59 moved T5 flips to the architecture-supported
+  `compactRebuildPreserve()` post-QEM boundary. Standard v58 passed at
+  90.45279, only 0.000044 below v15 and recovering nearly all pre-QEM loss.
+  Reduced v59 failed T7 at 74.119451. Correct state normalization works, but
+  exact standard workload/layout remains mandatory for the giant cliff.
+
+
+- Gala v60/v61 split the non-T5 profile by size. Screen-only v60 scored
+  90.452362, exactly the full 0.000472 non-T5 loss; large/giant-only v61 tied
+  v15 at 90.452834. Profile-4 flips above 400k are safe and count-neutral;
+  every measured regression is below 400k.
+
+
+- Gala v62/v63 split screen flips: ≤25k v62 tied v15, while 25k-50k
+  v63 scored 90.452362. Thus all 0.000472 screen regression lies in T3/T4;
+  small/T2 flips are safe and count-neutral. Combined with Batch 20, only
+  T3/T4 and T5 are regressive under pre-QEM profile-4 repair.
+
+
+- Gala v64/v65 split large/giant flips: both T6-only and T7-only tied v15
+  exactly. The large branch is independently count-neutral in both sub-bands.
+  Complete pre-QEM map: small/T2, T6, T7 tie; T3/T4 lose 0.000472; T5 loses
+  0.012862. Supported post-QEM T5 repair reduces that loss to 0.000044.
+
+
+- Gala v66/v67 tuned same-width constants on supported T5 restoration.
+  Quality weight 8.0 v66 tied v58 at 90.45279; diagonal weight 0.20 v67
+  failed T7 at 74.119451. Same source width and loop workload do not preserve
+  T7: constant values change generated code/timing enough to cross the cliff.
+
+
+- Gala v68/v69 completed the same-width v58 ranking sweep: quality weight
+  3.0 and diagonal weight 0.80 both tied v58 at 90.45279. Across four
+  attempts, ranking coefficients are count-inert except diagonal 0.20, which
+  is T7-unsafe. Retire restoration ranking weights.
+
+
+- Gala v70/v71 varied the supported T5 restoration envelope. Relaxing the
+  quality floor to 0.85 scored 90.452746; tightening coplanarity to 0.995
+  tied champion v15 at 90.452834. Flatter-only post-QEM repair recovers v58s
+  residual 0.000044 loss and is structurally score-neutral. v71 is the
+  restoration co-champion.
+
+
+- Gala v72/v73 completed the restoration-envelope sweep. Quality floor 0.90
+  failed T7; coplanarity 0.990 tied v15. Coplanarity response is non-monotonic:
+  0.990 and 0.995 tie, 0.992 trails by 0.000044. Quality-floor tuning is
+  retired; continue the successful flatness axis.
+
+
+- Gala v74/v75 refined strict post-QEM coplanarity. Threshold 0.997 scored
+  90.452702; threshold 0.999 scored **90.452878**, a new champion +0.000044
+  over v15. The T5 restoration response has a narrow non-monotonic positive
+  basin near ultra-flat patches. v75 is canonical Gala champion.
+
+
+- Gala v76/v77 completed strict coplanarity refinement: 0.996 scored
+  90.452746 and 0.998 scored 90.452702. Together with 0.997, all trail v75;
+  0.999 alone improves. The response is a discrete survivor-set jump, not a
+  smooth flatness trend.
+
+
+- Gala v78/v79 bracketed champion threshold 0.999: `.9985` scored
+  90.45279 and `.9995` scored 90.452834. Both trail v75, bounding its
+  positive survivor-set basin on each side. The gain is narrow and discrete.
+
+
+- Gala v80/v81 completed the champion threshold bracket. `.9988` tied v75
+  at 90.452878; `.9992` failed T6 at 74.166719 (`PPPPPFP`). The safe winning
+  interval is approximately `.9988`-`.9990`; below loses score, above crosses
+  T6. Retire scalar coplanarity refinement.
+
+
+- Gala v82/v83 composed v75 with independently count-neutral pre-QEM tiers.
+  v82 reached 96.312371 locally but failed T7 at 74.119539; v83 matched v75
+  locally yet scored 74.119539 with all tests passing. Tier compositions are
+  not additive: call-site layout/timing can catastrophically change official
+  compression even without validity failure. Retire this composition.

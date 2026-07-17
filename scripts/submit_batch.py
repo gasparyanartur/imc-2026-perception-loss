@@ -163,8 +163,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-wait", type=float, default=0,
                         help="optional timeout in seconds; default: wait forever")
     args = parser.parse_args(argv)
-    if len(args.files) != 2:
-        parser.error("a batch must contain exactly 2 source files")
 
     ids_file = args.ids_file or (
         ROOT / "data/submission-batches" /

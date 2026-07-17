@@ -885,3 +885,167 @@ a stable reversal mechanism.
   giant-tier shield.
 - Gala does **not** attempt neural, voxelization, or global remeshing —
   those remain rejected per Buckets 5, 6, 7, 16.
+
+
+### Gala iteration update — 2026-07-14 Batch 15
+
+Activated the dormant neighbor-disjoint, Vega-gated tail collapse wave across
+all tiers. v30 and v31 both scored **74.108159 (`PPPPPPF`)**: the mechanism
+preserved tests 1-6 but broke the giant tier regardless of start time or scan
+breadth. Status: **unsafe on T7; v32/v33 repeated the same failure
+even with strict geometry and an 80% envelope reserve. Status: **retired;
+reachable all-tier tail control flow is T7-unsafe.**
+
+
+### Gala iteration update — 2026-07-14 Batch 17 retry
+
+The uploadable Pomegranate/Gala composition isolated safe flip profiles. v44
+(profile 3) scored 74.092703 (`PPPPPPF`); v45 (profile 4) scored **90.425954
+(`PPPPPPP`)**. Status: profile 4 is a valid structural control but trails Gala
+v15 by 0.026880; profile 3 is T7-unsafe. Full flip transplant into v15 exceeds
+the service source limit, so future work must replace dead code or use a compact
+repair implementation.
+
+
+### Gala iteration update — 2026-07-14 Batch 18
+
+The exact-v15 profile-4 transplant fit the source limit by replacing dormant
+code. v46 (standard budgets) scored **90.4395 (`PPPPPPP`)**, while v47
+(reduced budgets) scored **74.131433 (`PPPPPPF`)**. Status: standard profile 4
+is structurally safe but regressive; reduced budgets are T7-unsafe. Continue
+with ranking changes inside the standard safe envelope and treat reduced-budget
+variants only as explicit parity probes.
+
+
+### Gala iteration update — 2026-07-14 Batch 19
+
+Future-collapsibility flip ranking failed both breadth profiles: v48 scored
+74.10594 (`PPPPPPF`) and v49 scored 74.166247 (`PPPPPFP`). Status: **retired**.
+The ranking moves the cliff between T7 and T6 rather than improving the valid
+collapse set. Continue with tier isolation using the established v46 ranking.
+
+
+### Gala iteration update — 2026-07-14 Batch 20
+
+Tier partition produced exact additive attribution: v50 T5-only scored
+90.439972; v51 non-T5 scored 90.452362, both all-pass. Their losses versus v15
+sum exactly to v46s all-tier loss. Status: T5 is the dominant regressive flip
+band; continue only with T5 breadth/order isolation and finer non-T5 mapping.
+
+
+### Gala iteration update — 2026-07-14 Batch 21
+
+v52 T5-only future ranking failed T7 at 74.106412; v53 reduced T5 breadth
+passed at 90.440238 but remained 0.012596 below v15. Status: **T5 pre-QEM flips
+and future-collapsibility ranking retired**. Proceed to audited snapshot search
+and supported post-QEM restoration.
+
+
+### Gala iteration update — 2026-07-14 Batch 22
+
+v54s low-valence audited snapshot ordering tied v15 at 90.452834; v55s
+high-valence ordering failed T7 at 74.119495. Status: weak low-valence beam is
+safe but count-inert; high-valence direction is T7-unsafe. Complete the already
+evaluated stronger pair, then retire the bounded valence-beam hypothesis.
+
+
+### Gala iteration update — 2026-07-14 Batch 23
+
+Both stronger audited snapshot orderings failed T7 at 74.119495. Status:
+**valence-beam hypothesis retired after four local attempts**. The hidden giant
+layout cliff dominates the audited T2 mechanism. Proceed to the supported
+post-QEM T5 restoration boundary.
+
+
+### Gala iteration update — 2026-07-14 Batch 24
+
+Supported-boundary post-QEM restoration is viable: v58 passed at 90.45279,
+only 0.000044 below v15; v59 reduced breadth failed T7 at 74.119451. Status:
+**v58 retained as restoration anchor**, reduced breadth retired. This validates
+`compactRebuildPreserve()` as the correct Bucket D state boundary.
+
+
+### Gala iteration update — 2026-07-14 Batch 25
+
+v60 screen-only scored 90.452362; v61 large/giant-only tied v15 at 90.452834.
+Status: large/giant pre-QEM flips are safe but count-neutral; the entire non-T5
+loss belongs to ≤50k. Continue with the prepared screen subpartition.
+
+
+### Gala iteration update — 2026-07-14 Batch 26
+
+v62 small/T2-only tied v15; v63 T3/T4-only scored 90.452362. Status: screen
+loss fully localized to T3/T4. Small/T2 flips are safe but count-neutral.
+
+
+### Gala iteration update — 2026-07-14 Batch 27
+
+Both v64 T6-only and v65 T7-only tied v15. Status: large/giant pre-QEM flips
+are independently safe but count-neutral. The tier-attribution sequence is
+complete; focus shifts to same-width tuning of supported post-QEM restoration.
+
+
+### Gala iteration update — 2026-07-14 Batch 28
+
+v66 higher quality weight tied v58 at 90.45279; v67 lower diagonal weight
+failed T7 at 74.119451. Status: quality increase count-inert; same-width source
+is not sufficient for giant safety. Complete the opposite prepared sweep.
+
+
+### Gala iteration update — 2026-07-14 Batch 29
+
+v68 and v69 both tied v58 at 90.45279. Status: **four-attempt same-width
+ranking sweep retired**; no variant improves the restoration anchor. Next vary
+the post-QEM T5 acceptance envelope while keeping standard workload.
+
+
+### Gala iteration update — 2026-07-14 Batch 30
+
+v70 broader quality scored 90.452746; v71 tighter coplanarity tied v15 at
+90.452834. Status: **v71 promoted as structural restoration co-champion**.
+Tighter flat-patch repair is safe and recovers v58s residual loss, though it
+does not yet improve the global champion.
+
+
+### Gala iteration update — 2026-07-14 Batch 31
+
+v72 tighter quality failed T7; v73 broader coplanarity tied v15. Status:
+**quality-floor tuning retired**. Coplanarity is non-monotonic, with 0.990 and
+0.995 co-champions; continue the already prepared stricter flat-patch pair.
+
+
+### Gala iteration update — 2026-07-14 Batch 32
+
+v74 coplanarity 0.997 scored 90.452702; v75 coplanarity 0.999 scored
+**90.452878 (`PPPPPPP`)**, a new champion +0.000044 over v15. Status: **v75
+promoted as canonical Gala champion**. Refine the narrow ultra-flat T5
+post-QEM restoration basin.
+
+
+### Gala iteration update — 2026-07-14 Batch 33
+
+v76 at 0.996 scored 90.452746; v77 at 0.998 scored 90.452702. Status: strict
+refinement below 0.999 completed; only 0.999 improves. Continue with the
+half-step bracket `.9985`/`.9995`.
+
+
+### Gala iteration update — 2026-07-14 Batch 34
+
+v78 `.9985` scored 90.45279; v79 `.9995` scored 90.452834. Both trail v75.
+Status: 0.999 is a bounded narrow optimum; complete the prepared quarter-step
+pair, then stop refining this threshold without new evidence.
+
+
+### Gala iteration update — 2026-07-14 Batch 35
+
+v80 `.9988` tied champion v75; v81 `.9992` failed T6. Status: **coplanarity
+refinement bounded and retired**. Preserve v75 at 0.999; proceed to structural
+tier composition.
+
+
+### Gala iteration update — 2026-07-14 Batch 36
+
+v82 high local compression failed T7 at 74.119539; v83 locally inert large
+composition passed all tests but also scored 74.119539. Status: **tier
+composition retired** due global generated-code/timing disruption and severe
+local/Kattis divergence. v75 remains champion.
