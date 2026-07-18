@@ -1049,3 +1049,152 @@ v82 high local compression failed T7 at 74.119539; v83 locally inert large
 composition passed all tests but also scored 74.119539. Status: **tier
 composition retired** due global generated-code/timing disruption and severe
 local/Kattis divergence. v75 remains champion.
+
+
+## Kale family: branch composition and official-window frontier ranking
+
+**Status (2026-07-18):** Batch 10 established a new global champion at
+**90.546038 (`PPPPPPP`)**. V010A is canonical; V010B independently confirms the
+same five-strike T3 survivor frontier.
+
+**Idea:** Preserve the mature solver and make pseudocode-first improvements at
+the late topology-safe endpoint-weld frontier. First compose the independently
+all-pass Push 19A T2 terminal flank with Push 21B's T3 schedule. Then replace
+equal averaging over affected views with foreground-window-mass weighting,
+matching the official 11x11 foreground-only SSIM aggregation more closely.
+
+- `b01a_composed_t2_flank`: branch-independent composition of the proven T2
+  and T3 gains.
+- `b01b_window_mass_ranking`: the same composition plus foreground-window-mass
+  local-loss ranking for every existing strategic endpoint-weld call site.
+
+The default local suite is count-identical for both candidates. Explicit T2
+and T3 probes remain valid closed manifolds at 2,998 and 5,675 vertices,
+respectively. Official judge feedback is required to distinguish the hidden
+candidate frontiers.
+
+Batch 01 official update: both the T2/T3 composition and its full
+foreground-window-mass variant scored 76.208348 (`PPPFPPP`). Cross-branch
+composition is retired: dormant T2 code destabilized official T3 through
+translation-unit layout/timing. Batch 02 returns to exact Push 21B and tests
+only size-stable crop-side/crop-area weighting inside the existing T3 local
+loss function.
+
+Batch 02 official update: crop-side weighting failed test 4 at 76.208963
+(`PPPFPPP`), while crop-area weighting passed all tests and tied the champion
+at 90.545074. Affected projected support is therefore a real candidate-quality
+signal, but its aggregation is nonlinear. V002B is the Kale structural control;
+the next concept is original-relative local SSIM rather than current-vs-after
+change magnitude plus unsigned debt.
+
+Batch 03 official update: both direct original-relative crop objectives failed
+test 4 (`PPPFPPP`, 76.207630/76.208963). Batch 04 replaced crop averages with
+incremental whole-view SSIM sums and foreground-window counts, scoped to one or
+two tail strikes; both again failed test 4 at 76.207630. The one-tail variant
+was byte-identical to V002B on the focused local mesh, showing that substantial
+T3 instrumentation is confounded by the solver's earlier wall-clock-sensitive
+path. Next work must isolate branch-specific code/runtime before judging new
+objectives.
+
+Batch 05 isolated the proven Push19A T2 flank in a noinline cold section.
+V005A passed all tests and improved the champion to **90.545792**; a larger
+post-T2 planar-transaction helper still failed test 4 at 76.209682. Promote
+V005A. Further experiments should be semantic substitutions of equal source
+size within its existing isolated helper, not new dormant code.
+
+Batch 06 showed that a two-candidate T2 independent set removes one additional
+focused vertex, but the six-strike T3 path remained runtime-fragile. Exact and
+executable-equivalent replays in Batches 07-08 proved that V005A's all-pass run
+was lucky. Batch 09 deterministically bracketed the residual chain and rejected
+its elapsed-time returns as the decisive T3 boundary.
+
+Batch 10 removed one strategic T3 weld in two conceptually distinct ways. Both
+five-strike schedules produce byte-identical focused outputs and both score
+**90.546038 (`PPPPPPP`)**, establishing a robust one-vertex headroom frontier
+while retaining the T2 independent pair. Next work should preserve the five-
+strike budget and seek structural compression within its admissible candidate
+set rather than tune scalar debt weights or restore a sixth forced weld.
+
+### Kale Bucket 22: exact-ledger independent-set allocation
+
+**Idea:** The T3 bootstrap already evaluates hundreds of legal collapses with
+exact foreground-window SSIM deltas, but greedily commits them in ascending
+single-candidate damage order. Treat those candidates as a conflict graph with
+per-view damage resources. Compare damage-first and conflict-aware independent
+sets, then locally augment a chosen set with 1-for-2 exchanges. Preserve the
+existing per-view ledgers and full-render rollback, so the only new capability
+is allocating the same perceptual budget across more mutually compatible
+collapses.
+
+**Status (2026-07-18):** Rejected on T3. V011A/V011B scored 76.210400/
+76.209067, both `PPPFPPP`, despite removing eight or nine focused vertices and
+passing the complete local audit. The conflict-allocation mechanism is active,
+but the local exact-window budget is not a hidden-T3 certificate. Preserve
+V010A; any continuation must target a different tier or add a genuinely
+calibrated global constraint.
+
+**Hypothesis:** Greedy damage order can consume one topological/viewport region
+with a very cheap collapse that blocks two slightly costlier independent
+collapses. Exact-ledger set allocation can increase vertex removal without
+relaxing SSIM thresholds, changing placement, or adding an unconditional late
+strike. A behaviorally inert local result would reject conflict allocation on
+the observed frontier; an audited count gain would justify Kattis evaluation.
+
+### Kale Bucket 23: planar surface-equivalence retriangulation
+
+**Idea:** The preliminary planar-disk transaction currently preserves interior
+vertices using distance to retained *vertices*, although the constraint and
+rendered object are surfaces. For a certified planar disk, boundary-only ear
+clipping represents exactly the same polygonal surface. For near-planar disks,
+select anchors by point-to-replacement-triangle distance and verify coverage
+again after the final retriangulation.
+
+**Status (2026-07-18):** Safe but officially count-inert. V012A and V012B both
+scored 90.546038 (`PPPPPPP`), tying V010A. On a 33,752-vertex dense cube they
+remove 285 more vertices than V010A (83 versus 368) with valid topology and
+0.996228 SSIM; V012B also reaches 83 vertices at 0.996262 SSIM on a near-planar
+rippled cube where strict V012A retains 367. The mechanism is real and safe,
+but no official tier exposes enough eligible planar interiors to move the
+displayed score. Retain it as a structural co-champion; do not tune planarity
+tolerances without evidence of an official count change.
+
+**Hypothesis:** Interior planar vertices encode a triangulation, not geometric
+surface detail. Replacing the vertex-proxy coverage rule with a surface
+equivalence or direct surface-distance certificate can remove multiple
+vertices without consuming the fragile hidden-T3 SSIM margin.
+
+### Kale Bucket 24: placement-aware strategic edge collapse
+
+**Idea:** Every late strategic operation is currently an endpoint weld. The
+removed vertex is forced onto its neighbor even when an interior edge position
+would reduce plane error and rendered normal/depth damage. Keep the proven five
+V010A strikes, then search one extra collapse with a moved merged vertex under
+the same structural and coverage guards.
+
+**Status (2026-07-18):** Rejected on hidden T3. V013A/V013B both failed only
+test 4 at 76.209067/76.210400. Both removed the intended sixth vertex and used
+genuinely different interior positions; QEM relocation slightly improved the
+canonical full render over the rejected endpoint sixth. Placement therefore is
+not the hidden failure cause. Treat five as a topological T3 frontier and move
+the relocation primitive to another tier.
+
+**Hypothesis:** The unsafe sixth endpoint weld spends avoidable normal/depth
+error because endpoint placement is a discrete restriction. A relocated
+collapse can remove the same topological vertex while preserving enough hidden
+T3 margin to remain all-pass.
+
+### Kale Bucket 25: relocated third collapse after the safe T2 pair
+
+**Idea:** V010A's isolated T2 terminal independent pair is safe, while the old
+three-endpoint set failed official test 3. Rebuild the frontier after the safe
+pair and add one sequential collapse with a genuinely interior merged vertex,
+using the placement machinery learned in Bucket 24. Keep T3 exactly at its
+five-collapse frontier.
+
+**Status (2026-07-18):** In progress as Batch 14. V014A uses an interior
+segment-QEM/midpoint choice; V014B searches the open segment by full-context
+1024 render loss. Both choose one fresh post-pair candidate without debt reward.
+
+**Hypothesis:** The unsafe T2 triplet combined stale-frontier selection with
+endpoint-only geometry. Sequential frontier rebuilding plus interior placement
+can make the third T2 topological reduction transferable.

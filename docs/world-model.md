@@ -7,6 +7,22 @@ ground truth. DO NOT put solution-specific information here, those go to docs/so
 - Our ultimate goal is to reduce the vertex count while maintaining SSIM > 0.9. Currently, our code mainly consists of internal limitations that prevent us from dropping below the SSIM threshold. Removing these thresholds will improve our score. Thus, we need to find ways of making the edge-removal safer, so that we can loosen the thresholds and get better compression.o
 - Tiers 2 and 3 (tests 3 and 4) are more SSIM sensitive than the others tiers. This can be seen by our tuned threshhold parameters, which are more conservative for these tiers. When we continue removing vertices using QEM, our SSIM eventually drops below the threshhold much sooner than the other tiers. If we can find a way to improve SSIM for these tiers, we can likely lower the threshholds and get better compression.
 - Tier 6 (test 7) is sensitive to run-time and is prone to timeouts. This is because it has more vertices. Sometimes running the exact same code will yield much lower results (up to a difference of 0.5 score), because the longer run-time makes our solution enter a different phase at a different timing.
+- The wall-clock sensitivity is not confined to the giant tier. On a 40,962-
+  vertex synthetic medium mesh, whitespace-equivalent readable and compact
+  builds reached identical vertex/face counts but different topology hashes.
+  Exact source layout and system load can therefore change the medium survivor
+  set even when the algorithm and final count are nominally identical.
+- Official Kale Batch 01 confirms dormant cross-tier code can also move the
+  medium cliff: inserting an independently all-pass T2 terminal operation into
+  the all-pass Push 21B translation unit made official test 4 fail, although
+  that operation is unreachable on test 4. Treat mutually exclusive source
+  branches as compiled-layout coupled, not experimentally additive.
+- Official T3 distinguishes how affected views are aggregated even when a hard
+  31,932-vertex local fixture is byte-identical: crop-side weighting failed
+  test 4, while crop-area weighting remained all-pass at the incumbent score.
+  The hidden mesh has candidate patches with materially different projected
+  support, and quadratic support is a safer proxy for foreground-window mass
+  than equal-view or linear-side weighting.
 - Because our initial QEM pass is greedy, it is possible that we remove vertices that would have been better to keep for future removals. In short, our current algorithm does not maintain "collapsibility" of the mesh, and does not necessarily find the globally optimal solution. This is a known limitation of QEM, and we can likely improve our results by using a more sophisticated algorithm that maintains collapsibility.
 - Even if one tier is failing, we can still estimate the quality of our solution by looking at the total score composed by the other tiers. The tiers are independent and failed tiers give 0 points, so the total sum of the scores should still improve compared to previous solutions with the same failing tier.
 - When iterating on a solution, we need to be very careful not to fall into the trap of just tuning parameters back and forth. Our coding agents tend to tune one parameter at a time in an inefficient way (nudging the parameter value slightly), and get stuck without making any serious progress. A clear sign this is happening is when we see the exact same score for multiple iterations.
@@ -257,3 +273,103 @@ rollback) per the world model.
   locally yet scored 74.119539 with all tests passing. Tier compositions are
   not additive: call-site layout/timing can catastrophically change official
   compression even without validity failure. Retire this composition.
+### Kale Batch 03: original-relative local fidelity is not a safe primary T3 objective
+
+On a 31,932-vertex synthetic dimpled shell, both absolute original-to-after
+crop SSIM and signed original-relative marginal SSIM changed the strategic
+survivors while preserving compression and slightly improving local rendered
+quality. Nevertheless both produced `PPPFPPP` officially (76.207630 and
+76.208963). I therefore believe hidden test 4 contains a catastrophic local
+configuration not represented by this smooth shell, and that conservative
+current-vs-after disruption ordering in the all-pass crop-area control encodes
+essential safety. Original-relative information may still be useful only
+inside a conservative admissible set, not as the primary ordering.
+
+### Kale Batch 04: T3 instrumentation itself can invalidate hidden test 4
+
+The final-strike-only incremental-global variant produced an output
+byte-identical to the all-pass V002B control on the 31,932-vertex focused mesh,
+but officially failed test 4 at 76.207630. The two-tail variant failed at the
+same score. The exact-global objective therefore remains untested on the hidden
+candidate frontier: extra reference accounting before the final strike can
+alter earlier wall-clock-dependent work. Future composition must isolate new
+code and runtime from the T3 control path, or first replace its time gates with
+deterministic work budgets.
+
+### Kale Batch 05: compact cold-section isolation can compose T2, but section growth still moves T3
+
+The compact isolated Push19A flank composed successfully with V002B and raised
+the all-pass score to 90.545792. A larger helper in the same dedicated cold T2
+section failed hidden test 4 at 76.209682 despite being unexecuted on T3. Thus
+isolation is helpful but ELF/code-size layout remains globally coupled. The
+current safest experimental surface is equal-byte substitutions inside the
+V005A helper; adding dormant helper bodies is not safe.
+
+### Kale Batch 06: identical T3 machine code can produce opposite official outcomes
+
+V006A changes only the isolated T2 helper's one-candidate immediate to two.
+After removing debug metadata, its binary differs from all-pass V005A only in
+the build ID and that single helper byte; every T3-executed instruction and
+address is identical. Yet V006A returned `PPPFPPP` while V005A returned
+`PPPPPPP`. Official T3 is therefore runtime-variable at a wall-clock gate, not
+merely source-layout-sensitive. One paired exact replay is required before
+interpreting marginal all-pass results.
+
+The source-distinct Batch 08 replay compiled to executable instructions exactly
+matching V005A/V006A (only GNU build IDs differed), and both returned
+`PPPFPPP`. The earlier V005A all-pass was therefore a lucky run. Treat
+elapsed-time branch outcomes, not compiler layout, as the causal variable and
+replace T3 inter-stage time gates with deterministic stage schedules.
+
+Batch 09 showed that deterministically stopping after the first residual or
+forcing the full audited residual chain both still fail hidden test 4. The
+inter-stage returns are not the decisive boundary. Current belief shifts to
+insufficient perceptual headroom in the six forced strategic welds; remove one
+late weld before making deeper time-budget changes.
+
+
+### Kale Batch 10: five strategic T3 welds are a reproducible safe frontier
+
+Two conceptually distinct five-strike schedules—four weak plus one concentrated,
+and three weak plus both concentrated tails—produce byte-identical focused T2
+and T3 meshes. Both also pass all seven official tests at 90.546038. The prior
+six-strike path repeatedly failed hidden T3 despite occasionally passing under
+runtime variance. This strongly locates the hidden quality boundary at the
+sixth forced strategic weld, rather than at the kind or ordering of the first
+five. I now treat five as the robust T3 strategic budget. Improvements should
+recover compression through safer multi-candidate selection or other tiers,
+not reintroduce an unconditional sixth strike.
+
+### Kale Batch 11: local exact-window audit does not license multi-vertex T3 reallocation
+
+Conflict-aware independent-set allocation removed eight or nine additional
+vertices on the focused 31,932-vertex T3 mesh and passed the existing complete
+1024 post-wave audit. Both variants nevertheless failed only official test 4.
+Thus the internal ledger plus complete local renderer is not a calibrated
+certificate for changing the hidden T3 survivor distribution. The robust T3
+budget remains the exact V010 five-strike path; multi-vertex structural search
+must either use a stricter original-global certificate or move to another tier.
+
+### Kale Batch 12: planar surface-space retriangulation is safe but scarce officially
+
+Replacing vertex-to-vertex anchor coverage with a strict planar surface theorem
+or direct point-to-replacement-triangle coverage is strongly active on dense
+planar geometry: both methods reduce a valid 33,752-vertex cube to 83 survivors
+versus V010A's 368, and the direct method does the same on a near-planar ripple
+at 0.996262 local SSIM. Both preserve canonical T2, T3, and 48k curved outputs
+byte-for-byte and both pass all official tests, but neither changes the
+90.546038 score. I therefore believe the official meshes contain few eligible
+single-boundary planar interiors, or too few for displayed score resolution.
+Planar coverage is a validated safe primitive, not the missing large score
+source. Continue with a different geometric class rather than threshold tuning.
+
+### Kale Batch 13: T3's sixth-collapse failure is invariant to edge placement
+
+The sixth endpoint weld was replaced by two genuinely interior edge collapses:
+one segment-QEM/midpoint choice and one full-context render-space segment
+search. They produced distinct valid 4,407-vertex meshes; the QEM variant even
+slightly improved the canonical full-render score versus the rejected endpoint
+sixth. Both nevertheless failed only official test 4. The five-strike boundary
+is therefore topological/perceptual at the hidden mesh level, not an artifact
+of endpoint-only placement. Do not spend another T3 batch changing the sixth
+vertex's position; apply relocation to T2 or T4 instead.
