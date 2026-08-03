@@ -1,56 +1,80 @@
-# imc-2026-perception-loss
+# IMC 2026 perception-loss mesh simplification
 
-## Preliminary evaluator
+This repository develops C++ mesh simplifiers for the IMC 2026 challenge. The
+local acceptance pipeline is native C++: it compiles a `.cpp` candidate, runs
+it on the mesh suite, validates the output topology and geometry, and measures
+six-view perceptual similarity.
 
-`evaluate.py` is a self-contained Python reimplementation of the evaluation
-pipeline described in `docs/report.md` (sections 2.1–2.7). It renders the
-original and simplified meshes from the six axial cameras, builds flat-shaded
-normal maps and perspective-correct depth maps, computes foreground-only 11×11
-windowed SSIM, the symmetric (vertex-based) Hausdorff distance, the
-closed-2-manifold validity gate, and the compression rate.
+The official grader is authoritative for final results. Local reports are for
+repeatable development and regression testing.
 
-It is a *preliminary* reference for local iteration, not a bit-exact clone of
-the official grader. Only NumPy is required (SciPy speeds up the Hausdorff step
-when available).
+## Quick start
 
-```sh
-python3 evaluate.py data/sample-input.txt data/sample-output.txt
-# faster, lower-fidelity preview:
-python3 evaluate.py data/sample-input.txt data/sample-output.txt --resolution 256
-```
-
-The script exits with status `0` for a valid submission and `1` otherwise. See
-[`docs/evaluation.md`](docs/evaluation.md) for full details of the evaluator and
-its options.
-
-## Iterating on a solution
-
-`evaluate.sh` runs the Python solver (`solutions/baseline/baseline.py`) across a **representative
-dataset** of meshes (`data/ppsurf/`, derived from the
-[ppsurf dataset](https://huggingface.co/datasets/perler/ppsurf)), scores each
-with `evaluate.py`, logs the aggregate to `outputs/<date>-<result>.txt`, and
-reports whether the new model beats the best previous valid run. The submission
-is only valid when **every** mesh in the dataset passes — evaluating on a single
-mesh would hide solvers that fail on real geometry.
+Build the native evaluator binaries:
 
 ```sh
-./evaluate.sh                 # default solver, dataset, native 1024 grader resolution
-RESOLUTION=256 ./evaluate.sh  # fast preview only (not a real-grader score)
+scripts/build-evaluators.sh
 ```
 
-Regenerate or grow the dataset with `datasets/prepare_ppsurf.py` (requires
-`trimesh`); see [`docs/evaluation.md`](docs/evaluation.md) for details.
-
-Coding agents should follow [`AGENTS.md`](AGENTS.md) and use the
-[`skills/evaluate.md`](skills/evaluate.md) skill to drive this loop.
-
-## Tests
-
-The evaluator is covered by a pytest suite under `tests/` that validates mesh
-I/O, the validity gate, rendering, SSIM, Hausdorff, the end-to-end pipeline, and
-the multi-sample dataset harness.
+Evaluate the canonical C++ baseline:
 
 ```sh
-pip install numpy pytest   # scipy is optional (speeds up Hausdorff)
-python3 -m pytest
+scripts/evaluate.sh --candidate solutions/lemon/v115.cpp
 ```
+
+Add the synthetic suite and save a JSON report:
+
+```sh
+scripts/evaluate.sh --candidate solutions/lemon/v115.cpp \
+    --include-synthetic --json outputs/latest.json
+```
+
+Every candidate must be a C++ source file with a `.cpp` extension. Build an
+arbitrary candidate with:
+
+```sh
+scripts/build.sh path/to/solution.cpp
+```
+
+See [docs/evaluation.md](docs/evaluation.md) for mesh format, native metrics,
+gates, datasets, and all evaluator options.
+
+## Repository layout
+
+- `solutions/` — C++ solution families and iteration records;
+- `evaluators/` — native C++ validity and perceptual diagnostics;
+- `scripts/` — build, evaluate, submit, and polling entry points;
+- `data/ppsurf/` — representative evaluation meshes;
+- `data/synth_bench/` — targeted synthetic shape suite;
+- `docs/` — challenge, evaluation, mathematical, and solution documentation;
+- `tests/` — repository checks for scripts, data, and documented invariants.
+
+## Submissions
+
+Submit one or more C++ sources with:
+
+```sh
+python3 scripts/submit.py --family lemon solutions/lemon/v115.cpp
+```
+
+After evaluating each candidate locally in sequence, upload 4–6 C++ sources,
+store their IDs, and wait for all results with:
+
+```sh
+python3 scripts/submit_batch.py --family lemon \
+    solutions/lemon/v115.cpp solutions/lemon/v116.cpp
+```
+
+Both commands use the service defaults for the team secret, problem, and
+username. Use `--teamsecret`, `--problem`, or `--username` to override them.
+The batch command writes its submission IDs and final status responses to
+`data/submission-batches/`. Read [skills/submit.md](skills/submit.md) before
+sending an official request.
+
+## Development guidance
+
+Read [AGENTS.md](AGENTS.md) before making changes. Use the native evaluator as
+the source of truth for local decisions, record new solution ideas in
+[docs/solutions.md](docs/solutions.md), and update
+[docs/world-model.md](docs/world-model.md) when experiments change beliefs
+about the challenge meshes.

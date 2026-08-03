@@ -1,254 +1,141 @@
 # Evaluation
 
-This document describes the offline evaluator (`evaluate.py`) and the
-iteration harness (`evaluate.sh`) used to score candidate solutions for the
-IMC 2026 mesh-simplification challenge.
+This document specifies the local evaluation pipeline for the IMC 2026 mesh
+simplification challenge. The native evaluator is implemented in C++ and the
+only supported candidate format is a C++ source file.
 
-It is a **preliminary** reimplementation of the official grading pipeline as
-described in [`docs/report.md`](report.md) (sections 2.1–2.7). It is meant for
-fast local iteration, not as a bit-exact clone of the competition grader.
+The local evaluator is intended to provide repeatable engineering feedback.
+The official grader remains authoritative for final scores.
 
----
+## 1. Evaluation gates
 
-## 1. What is being evaluated
+For each input mesh, a candidate must satisfy every gate:
 
-The challenge asks for a simplified mesh `M'` derived from an original mesh `M`
-that:
+1. The candidate finishes within the configured per-mesh time budget.
+2. The output uses the challenge mesh format and has a valid vertex count.
+3. The output is a closed, watertight, consistently oriented triangular
+   2-manifold with positive-area faces.
+4. The sampled symmetric surface Hausdorff distance is within `0.05 · D`, where
+   `D` is the original mesh's axis-aligned bounding-box diagonal.
+5. The native six-view `FinalSSIM` is at least `0.9`.
 
-1. is a **closed watertight triangular 2-manifold** with non-degenerate
-   (positive-area) faces and `1 ≤ |V'| ≤ |V|`;
-2. stays within a **symmetric Hausdorff bound**, `d_H(M, M') ≤ 0.05 · Diagonal`;
-3. reaches a **foreground multi-view SSIM** of `FinalSSIM ≥ 0.9`.
+The reported objective is:
 
-Valid submissions are then ranked purely by **vertex reduction**:
+$$
+\mathrm{CompressionRate} = 100\left(1 - \frac{|V'|}{|V|}\right),
+$$
 
-```
-CompressionRate = 100 · (1 − |V'| / |V|)        (higher is better)
-```
+where $V$ and $V'$ are the original and simplified vertex sets.
 
-A submission that fails any of the three gates is **invalid** and is not ranked,
-regardless of its compression rate.
+A submission is locally valid only when every evaluated scenario passes.
 
----
+## 3. Native rendering and SSIM
 
-## 2. The evaluator (`evaluate.py`)
+The native diagnostic renders both meshes from six axial cameras at distance
+$2.5$:
 
-### Mesh format
+$$
+(\pm 2.5,0,0),\quad (0,\pm 2.5,0),\quad (0,0,\pm 2.5).
+$$
 
-Both meshes use the challenge format: a `V F` header line, then `v x y z`
-vertex lines, then `f i j k` face lines (faces are **1-indexed** on disk and
-converted to 0-indexed internally).
+The default render is 1024 × 1024 with focal length 800 and principal point
+(512, 512). Rendering uses flat per-face normal maps, perspective-correct
+depth, a nearest-triangle z-buffer, and supersampling.
 
-### Validity gate
+SSIM uses an 11 × 11 Gaussian window with $K_1=0.01$, $K_2=0.03$, and
+$L=255$. Foreground windows are averaged; normal-map channels are averaged
+before combining normal and depth scores. The six view scores are averaged to
+produce `FinalSSIM`.
 
-`check_validity()` enforces:
+The native diagnostic also reports:
 
-- vertex-count bound `1 ≤ |V'| ≤ |V|`;
-- all face indices in range and three distinct vertices per face;
-- positive triangle area (no degenerate faces);
-- every **undirected** edge shared by exactly two faces (closed 2-manifold);
-- every **directed** edge used exactly once (consistent orientation).
+- aggregate normal SSIM;
+- aggregate depth SSIM;
+- per-view normal, depth, and combined SSIM;
+- sampled surface Hausdorff distance and its limit;
+- compression and solve time.
 
-### Rendering
+The 256-pixel diagnostic is available for quick experiments only. It is not a
+promotion or submission criterion.
 
-Each mesh is rendered from **six axial cameras** at distance `D = 2.5`:
-`(±2.5, 0, 0)`, `(0, ±2.5, 0)`, `(0, 0, ±2.5)`, all looking at the origin. The
-camera model is a 1024×1024 pinhole with `fx = fy = 800` and principal point
-`(512, 512)`. Pixels are sampled once at their center and resolved with a
-z-buffer (nearest triangle wins).
+## 4. Evaluator components
 
-Two feature images are produced per view:
+The source files under `evaluators/` are compiled into `build/evaluators/`:
 
-- **Normal map** — flat per-face unit normals mapped to RGB via
-  `(n + 1) · 127.5`; background is neutral gray `(127.5, 127.5, 127.5)`.
-- **Depth map** — perspective-correct depth `z = 1 / Σ(wᵢ / zᵢ)`; background
-  depth is `255`.
+- `diagnostic_v3.cpp` — native 1024-pixel SSIM diagnostic;
+- `diag_small.cpp` — faster low-resolution diagnostic;
+- `hausdorff_validator.cpp` — sampled bidirectional surface distance;
+- `mesh_validity.cpp` — native topology, indexing, degeneracy, and vertex-count
+  validation.
 
-> **Note on resolution.** The focal length is calibrated for the native 1024
-> resolution. Lower `--resolution` values are useful for fast previews but crop
-> the projected object and therefore change the score; use 1024 for scores that
-> approximate the real grader.
-
-### SSIM
-
-SSIM uses an 11×11 sliding window with `k1 = 0.01`, `k2 = 0.03`, `L = 255`. Only
-**foreground windows** are averaged — a window counts if its center pixel is
-non-background in the original and/or the simplified render. Common background
-is excluded. For RGB normal maps, SSIM is computed per channel and averaged.
-
-The combined score per view is `0.5 · SSIM(normal) + 0.5 · SSIM(depth)`, and:
-
-```
-FinalSSIM = mean over the 6 views
-```
-
-### Hausdorff distance
-
-`symmetric_hausdorff()` computes the **vertex-based** symmetric Hausdorff
-distance (using SciPy's `cKDTree` when available, otherwise a chunked NumPy
-fallback). This follows the practical, vertex-based interpretation in
-`docs/report.md` §3.8 and is a conservative proxy, not a full surface guarantee.
-The bound is `0.05 · Diagonal`, where `Diagonal` is the AABB diagonal of `M`.
-
-### Output
-
-`evaluate.py` produces one of three outputs:
-
-- default: a human-readable report;
-- `--quiet`: a single `VALID` / `INVALID` line;
-- `--summary`: the report (unless combined with `--quiet`) followed by a stable,
-  machine-readable `KEY=VALUE` block:
-
-  ```
-  RESULT=VALID|INVALID
-  MANIFOLD_OK=0|1
-  FINAL_SSIM=<float>
-  SSIM_THRESHOLD=<float>
-  HAUSDORFF=<float>
-  HAUSDORFF_BOUND=<float>
-  COMPRESSION_RATE=<float>
-  ORIGINAL_VERTICES=<int>
-  SIMPLIFIED_VERTICES=<int>
-  ```
-
-The process exits `0` for a valid submission and `1` otherwise.
-
-### Usage
+Build them with:
 
 ```sh
-python3 evaluate.py ORIGINAL.txt SIMPLIFIED.txt              # full report
-python3 evaluate.py ORIGINAL.txt SIMPLIFIED.txt --quiet      # VALID / INVALID
-python3 evaluate.py ORIGINAL.txt SIMPLIFIED.txt --summary    # report + KEY=VALUE
-python3 evaluate.py ORIGINAL.txt SIMPLIFIED.txt --resolution 256   # fast preview
+scripts/build-evaluators.sh
 ```
 
-Only NumPy is required; SciPy is optional and only accelerates the Hausdorff
-step.
+The orchestration command runs the candidate once per input mesh, writes a
+temporary output, invokes the native diagnostics, and aggregates the results.
+It does not execute candidate scripts or interpret non-C++ source files.
 
----
+## 5. Datasets
 
-## 3. The representative dataset (`data/ppsurf`)
+The default suite is `data/ppsurf/`, a representative collection of closed
+meshes spanning multiple sizes and geometric characteristics. A candidate must
+pass every mesh in the suite.
 
-A solver must generalize across many meshes, so the harness scores it on a
-**representative dataset** rather than a single mesh. Evaluating on one trivial
-mesh (e.g. a cube) hides solvers that fail on real geometry — the
-"passes N/M scenarios" situation.
+The synthetic suite in `data/synth_bench/` contains targeted shapes for tier,
+feature, silhouette, and renderer diagnostics. It is enabled explicitly and
+should be used in addition to, not instead of, the representative suite.
 
-`data/ppsurf/` holds meshes derived from the **ppsurf** dataset
-(<https://huggingface.co/datasets/perler/ppsurf>, also mirrored in the
-`cg-tuwien/ppsurf` GitHub repo). Each mesh is recentered on its bounding-box
-center and scaled into the unit sphere, then written in the challenge format
-(`V F` header, `v x y z`, 1-indexed `f i j k`). `data/ppsurf/MANIFEST.md`
-records each file's vertex/face counts and its source mesh.
+Large stress meshes can be generated under the ignored `data/stress/` path.
+Stress evaluation is useful for memory, runtime, topology, and Hausdorff
+behavior at grader scale. Full native rendering should be reserved for meshes
+that fit within the local resource budget.
 
-### Regenerating / growing the dataset
+## 6. Commands
 
-`datasets/prepare_ppsurf.py` builds the dataset from ppsurf source meshes:
+Evaluate a C++ candidate on the representative suite:
 
 ```sh
-pip install trimesh   # required for preparation only
-python3 datasets/prepare_ppsurf.py --source /path/to/ppsurf/datasets \
-    --out data/ppsurf --num 20
+scripts/evaluate.sh --candidate solutions/lemon/v115.cpp
 ```
 
-It loads every `.ply`/`.obj`/`.stl`/`.off` under `--source`, normalizes and
-validates it (closed watertight 2-manifold, positive-area faces), and selects
-`--num` meshes spanning the vertex-count range so the set stays diverse.
-
-Obtaining ppsurf meshes:
-
-- A 10-mesh minimal set ships inside the ppsurf GitHub repo under
-  `datasets/abc_minimal/03_meshes` (clone `cg-tuwien/ppsurf`).
-- The full ABC / Famous / Thingi10k test sets are fetched by ppsurf's own
-  `datasets/download_testsets.py`; run that, then pass the extracted
-  `*/03_meshes` folders to `--source` to grow the set toward `--num`.
-
----
-
-## 4. The multi-sample evaluator (`evaluate_dataset.py`)
-
-`evaluate_dataset.py` runs a solver across a whole dataset and aggregates the
-results. For each input mesh it:
-
-1. runs `SOLVER < input > simplified` (a subprocess, like the real grader);
-2. scores the pair with `evaluate.py`'s `evaluate()`;
-3. records the per-scenario verdict, compression, Hausdorff and SSIM.
-
-It prints a per-scenario table and a machine-readable `KEY=VALUE` block. The
-overall `RESULT` is `VALID` only when **every** scenario is valid; the aggregate
-`COMPRESSION_RATE` is the **mean** over all scenarios:
-
-```
-RESULT=VALID|INVALID
-SCENARIOS_TOTAL=<int>
-SCENARIOS_PASSED=<int>
-MEAN_COMPRESSION_RATE=<float>
-MIN_COMPRESSION_RATE=<float>
-COMPRESSION_RATE=<float>        # alias for the mean (kept stable for tooling)
-```
-
-The process exits `0` only if every scenario passed.
-
-### Usage
+Include synthetic diagnostics and save machine-readable records:
 
 ```sh
-python3 evaluate_dataset.py --dataset data/ppsurf --summary
-python3 evaluate_dataset.py --solver solutions/baseline/baseline.py --dataset data/ppsurf \
-    --resolution 1024 --summary
+scripts/evaluate.sh --candidate solutions/lemon/v115.cpp \
+    --include-synthetic --json outputs/latest.json
 ```
 
-The default render resolution for the multi-mesh harness is the native grader
-resolution `1024`, so the reported score reflects real (final) grading
-performance. The focal length is calibrated for 1024; passing a smaller
-`--resolution` narrows the field of view and crops the object, which changes the
-SSIM and can flip the validity verdict, so use it only for quick,
-non-representative previews. Only NumPy is required (SciPy speeds up the
-Hausdorff step).
-
----
-
-## 5. The iteration harness (`evaluate.sh`)
-
-`evaluate.sh` is the end-to-end loop used while iterating on the Python solver.
-It:
-
-1. runs the solver (`solutions/baseline/baseline.py` by default) on **every** mesh in the dataset
-   directory and scores each with `evaluate.py` (via `evaluate_dataset.py`);
-2. aggregates the per-scenario verdicts — the submission is `VALID` only when
-   all scenarios pass; the reported `CompressionRate` is the mean over all
-   scenarios;
-3. writes a timestamped log to `outputs/<date>-<result>.txt`, where `<result>`
-   is the mean compression metric on success (e.g. `compr-78.2938`) or
-   `invalid` / `error` on failure;
-4. compares the new mean compression rate against the **best previous valid
-   run** recorded in `outputs/` and reports whether the model improved.
-
-### Configuration
-
-| Variable      | Default               | Meaning                          |
-| ------------- | --------------------- | -------------------------------- |
-| `SCRIPT_FILE` | `solutions/baseline/baseline.py`         | solver script to run             |
-| `DATASET_DIR` | `data/ppsurf`         | directory of input meshes        |
-| `OUTPUTS_DIR` | `outputs`             | directory for logs               |
-| `EVAL_SCRIPT` | `evaluate_dataset.py` | dataset evaluator script         |
-| `RESOLUTION`  | `1024` (native grader) | render resolution               |
-| `PYTHON`      | `python3`             | python interpreter               |
-
-### Exit codes
-
-- `0` — valid submission (all scenarios pass) **and** strictly better mean
-  compression than the previous best (or no previous valid run to compare
-  against);
-- `1` — invalid submission (one or more scenarios failed), solver/evaluator
-  error, or no improvement vs. the best previous valid run.
-
-### Usage
+Evaluate custom files or directories by repeating `--dataset`:
 
 ```sh
-./evaluate.sh                          # default solver, dataset, native 1024 res
-RESOLUTION=256 ./evaluate.sh           # fast preview only (not a real-grader score)
-SCRIPT_FILE=solutions/baseline/baseline.py DATASET_DIR=data/ppsurf ./evaluate.sh
+scripts/evaluate.sh --candidate path/to/solution.cpp \
+    --dataset path/to/mesh-directory
 ```
 
-The `outputs/` directory is git-ignored; logs accumulate there so that score
-history (and the "did it improve?" check) persists across runs.
+Useful options:
+
+- `--time-budget SECONDS` — reject a mesh whose candidate exceeds the budget;
+- `--solver-timeout SECONDS` — hard subprocess timeout;
+- `--surface-samples N` — samples per direction for the Hausdorff diagnostic;
+- `--json PATH` — save per-scenario native metrics.
+
+The root `evaluate.sh` is a compatibility entry point for the same C++
+pipeline. The canonical command is `scripts/evaluate.sh`.
+
+## 7. Interpreting results
+
+A valid result means every scenario passed all local gates. It does not imply
+that the official grader will produce the same score, because implementation
+details, resource limits, and the official test set may differ.
+
+When a run fails, inspect the per-scenario note and the saved report. Typical
+next actions are:
+
+- reduce an aggressive tier's compression target when SSIM fails;
+- preserve feature and silhouette edges when normal SSIM falls;
+- reduce collapse distance when Hausdorff fails;
+- reduce scan work or simplify data structures when the time budget fails;
+- fix link-condition, orientation, or retriangulation logic when topology fails.

@@ -1,0 +1,41 @@
+{
+  "created_at": "2026-07-13T19:52:58.755091+00:00",
+  "family": "edenfruit",
+  "problem": "simplifygeometry",
+  "submissions": [
+    {
+      "file": "solutions/edenfruit/v23.cpp",
+      "filename": "v23.cpp",
+      "id": "45e994bd-8dc6-4404-8a46-b3c955689f2d",
+      "status": "scored",
+      "status_response": {
+        "id": "45e994bd-8dc6-4404-8a46-b3c955689f2d",
+        "status": "scored",
+        "score": 90.452702,
+        "cases": "PPPPPPP",
+        "kattis_id": "20038865",
+        "filename": "v23.cpp",
+        "family": "edenfruit",
+        "username": "gasparyanartur"
+      },
+      "finished_at": "2026-07-13T20:09:00+00:00"
+    },
+    {
+      "file": "solutions/edenfruit/v24.cpp",
+      "filename": "v24.cpp",
+      "id": "dd879a01-edc7-4434-b274-420e91bfaa66",
+      "status": "scored",
+      "status_response": {
+        "id": "dd879a01-edc7-4434-b274-420e91bfaa66",
+        "status": "scored",
+        "score": 90.452702,
+        "cases": "PPPPPPP",
+        "filename": "v24.cpp",
+        "family": "edenfruit",
+        "username": "gasparyanartur"
+      },
+      "finished_at": "2026-07-13T20:09:30+00:00"
+    }
+  ],
+  "username": "gasparyanartur"
+}
