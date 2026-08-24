@@ -1,80 +1,124 @@
-# IMC 2026 perception-loss mesh simplification
+# Perception-Aware Mesh Simplification — IMC 2026
 
-This repository develops C++ mesh simplifiers for the IMC 2026 challenge. The
-local acceptance pipeline is native C++: it compiles a `.cpp` candidate, runs
-it on the mesh suite, validates the output topology and geometry, and measures
-six-view perceptual similarity.
+A C++ mesh-simplification system developed for the **Huawei IMC 2026 mesh simplification challenge**. The goal is to reduce a triangle mesh to as few vertices as possible while preserving its topology, geometry, and rendered appearance under the official evaluator.
 
-The official grader is authoritative for final results. Local reports are for
-repeatable development and regression testing.
+The repository contains the final submission, the full project report, native evaluation tools, representative datasets, and the experimental history behind the solver.
 
-## Quick start
+- **Final submission:** [`FINAL_SUBMISSION.cpp`](FINAL_SUBMISSION.cpp)
+- **Project report:** [`IMC report CVmaxxing.pdf`](IMC%20report%20CVmaxxing.pdf)
+- **Challenge specification:** [`IMC.pdf`](IMC.pdf)
 
-Build the native evaluator binaries:
+## Overview
 
-```sh
+The challenge can be formulated as a constrained mesh-optimization problem. Given an input triangle mesh \(M=(V,F)\), we seek a simplified mesh \(M'=(V',F')\) with as few vertices as possible:
+
+\[
+\min_{M'} |V'|
+\]
+
+subject to three main constraints:
+
+\[
+\mathrm{FinalSSIM}(M,M') \ge 0.9,
+\qquad
+ d_H(M,M') \le 0.05\,D_{\mathrm{AABB}},
+\qquad
+ M' \in \mathcal{M}_{\mathrm{closed}}.
+\]
+
+In other words, the simplified result must remain a **closed, watertight triangular 2-manifold**, stay within the allowed symmetric Hausdorff distance, and preserve appearance under the evaluator's six fixed camera views. Visual similarity is measured from rendered **normal and depth maps** using foreground-only SSIM.
+
+This makes the problem different from ordinary mesh compression: the objective is not to minimize geometric error in isolation, but to remove geometry that is perceptually unnecessary while protecting the small subset of vertices and faces that strongly affect silhouettes, normals, depth, topology, or the Hausdorff bound.
+
+Our solution is built around a fast **edge-collapse / Quadric Error Metric (QEM)** pipeline, augmented with competition-specific perceptual and structural safeguards. The final solver combines geometric collapse costs with topology checks, planar-region simplification, screen-space reasoning, six-view rasterization, and tightly budgeted refinement passes. The implementation is written as a single self-contained C++17 submission to fit the competition's runtime and memory constraints.
+
+## Method
+
+The solver evolved from a conventional QEM decimator into a perception-aware simplification pipeline. Its main components are:
+
+- **Quadric-error edge collapse** for efficient geometry reduction.
+- **Strict manifold and degeneracy checks** before topology-changing operations.
+- **Planar / near-coplanar simplification** to aggressively remove redundant tessellation on flat surfaces.
+- **Six-view screen-space analysis** matching the evaluator's axial camera setup.
+- **Normal- and depth-aware perceptual checks** to protect visually important geometry.
+- **Silhouette and projected-coverage reasoning** for vertices that have disproportionate image-space impact.
+- **Strategic endpoint-weld and local refinement passes** near the perceptual frontier.
+- **Tier-dependent behavior and anytime scheduling** so the algorithm remains practical from small meshes to million-vertex inputs.
+
+The central design principle is to spend the vertex budget where the evaluator can actually see it. Flat interior triangulation can often be simplified heavily, while small changes near silhouettes, sharp features, or high-impact projected regions can consume a large fraction of the SSIM margin.
+
+For the mathematical formulation and the full reasoning behind the approach, see the [project report](IMC%20report%20CVmaxxing.pdf), [`docs/math-formalism.md`](docs/math-formalism.md), and [`docs/mesh-simplification-overview.md`](docs/mesh-simplification-overview.md).
+
+## Evaluation
+
+The repository includes a local native evaluator designed to reproduce the important parts of the official acceptance pipeline. A candidate is compiled and run on the mesh suite, after which the output is checked for topology/geometry validity and compared perceptually through six rendered views.
+
+The **official grader remains authoritative**; the local evaluator is intended for repeatable development, regression testing, and candidate ranking.
+
+### Build the evaluators
+
+```bash
 scripts/build-evaluators.sh
 ```
 
-Evaluate the canonical C++ baseline:
+### Evaluate the final submission
 
-```sh
-scripts/evaluate.sh --candidate solutions/lemon/v115.cpp
+```bash
+scripts/evaluate.sh --candidate FINAL_SUBMISSION.cpp
 ```
 
-Add the synthetic suite and save a JSON report:
+Evaluate with the synthetic benchmark suite and save a JSON report:
 
-```sh
-scripts/evaluate.sh --candidate solutions/lemon/v115.cpp \
-    --include-synthetic --json outputs/latest.json
+```bash
+scripts/evaluate.sh --candidate FINAL_SUBMISSION.cpp \
+    --include-synthetic \
+    --json outputs/latest.json
 ```
 
-Every candidate must be a C++ source file with a `.cpp` extension. Build an
-arbitrary candidate with:
+To compile an arbitrary candidate directly:
 
-```sh
+```bash
 scripts/build.sh path/to/solution.cpp
 ```
 
-See [docs/evaluation.md](docs/evaluation.md) for mesh format, native metrics,
-gates, datasets, and all evaluator options.
+See [`docs/evaluation.md`](docs/evaluation.md) for the mesh format, metrics, validation gates, datasets, and evaluator options.
 
-## Repository layout
+## Repository structure
 
-- `solutions/` — C++ solution families and iteration records;
-- `evaluators/` — native C++ validity and perceptual diagnostics;
-- `scripts/` — build, evaluate, submit, and polling entry points;
-- `data/ppsurf/` — representative evaluation meshes;
-- `data/synth_bench/` — targeted synthetic shape suite;
-- `docs/` — challenge, evaluation, mathematical, and solution documentation;
-- `tests/` — repository checks for scripts, data, and documented invariants.
-
-## Submissions
-
-Submit one or more C++ sources with:
-
-```sh
-python3 scripts/submit.py --family lemon solutions/lemon/v115.cpp
+```text
+.
+├── FINAL_SUBMISSION.cpp       # final self-contained C++ solution
+├── IMC report CVmaxxing.pdf   # full project report
+├── IMC.pdf                    # challenge specification
+├── solutions/                 # solver families and iteration history
+├── evaluators/                # native validity/perceptual evaluators
+├── scripts/                   # build, evaluation and submission tools
+├── data/                      # evaluation data and experiment records
+├── datasets/                  # additional mesh datasets
+├── docs/                      # formulation, methods and experiment notes
+└── tests/                     # repository/evaluator checks
 ```
 
-After evaluating each candidate locally in sequence, upload 4–6 C++ sources,
-store their IDs, and wait for all results with:
+The most useful technical documentation is:
 
-```sh
-python3 scripts/submit_batch.py --family lemon \
-    solutions/lemon/v115.cpp solutions/lemon/v116.cpp
+- [`docs/evaluation.md`](docs/evaluation.md) — local evaluation pipeline and metrics.
+- [`docs/math-formalism.md`](docs/math-formalism.md) — mathematical formulation.
+- [`docs/mesh-simplification-overview.md`](docs/mesh-simplification-overview.md) — background and algorithmic overview.
+- [`docs/solutions.md`](docs/solutions.md) — detailed experimental history and solver iterations.
+- [`docs/world-model.md`](docs/world-model.md) — accumulated observations about the hidden evaluation behavior.
+
+## Final submission
+
+[`FINAL_SUBMISSION.cpp`](FINAL_SUBMISSION.cpp) is the submission-ready solver. It is deliberately self-contained and uses no external runtime dependencies beyond a standard C++17 environment.
+
+The development history in `solutions/` contains many intermediate solver families and experiments. These are retained for reproducibility and for understanding how the final approach evolved, but new readers should start with the report and `FINAL_SUBMISSION.cpp` rather than the historical variants.
+
+## Reproducing development experiments
+
+For experimentation, evaluate candidates locally before comparing them on the official service. Example:
+
+```bash
+scripts/evaluate.sh --candidate solutions/lemon/v115.cpp
 ```
 
-Both commands use the service defaults for the team secret, problem, and
-username. Use `--teamsecret`, `--problem`, or `--username` to override them.
-The batch command writes its submission IDs and final status responses to
-`data/submission-batches/`. Read [skills/submit.md](skills/submit.md) before
-sending an official request.
-
-## Development guidance
-
-Read [AGENTS.md](AGENTS.md) before making changes. Use the native evaluator as
-the source of truth for local decisions, record new solution ideas in
-[docs/solutions.md](docs/solutions.md), and update
-[docs/world-model.md](docs/world-model.md) when experiments change beliefs
-about the challenge meshes.
+The project contains extensive iteration records because many apparently safe simplifications behave differently at the hidden perceptual boundary. Local tests are therefore best treated as a regression and diagnostic tool rather than a perfect substitute for the official evaluator.
