@@ -5,26 +5,26 @@ A C++ mesh-simplification system developed for the **Huawei IMC 2026 mesh simpli
 The repository contains the final submission, the full project report, native evaluation tools, representative datasets, and the experimental history behind the solver.
 
 - **Final submission:** [`FINAL_SUBMISSION.cpp`](FINAL_SUBMISSION.cpp)
-- **Project report:** [`IMC report CVmaxxing.pdf`](IMC%20report%20CVmaxxing.pdf)
+- **Project report:** [`perception-aware-mesh-simplification-report.pdf`](perception-aware-mesh-simplification-report.pdf)
 - **Challenge specification:** [`IMC.pdf`](IMC.pdf)
 
 ## Overview
 
-The challenge can be formulated as a constrained mesh-optimization problem. Given an input triangle mesh \(M=(V,F)\), we seek a simplified mesh \(M'=(V',F')\) with as few vertices as possible:
+The challenge can be formulated as a constrained mesh-optimization problem. Given an input triangle mesh $M=(V,F)$, we seek a simplified mesh $M'=(V',F')$ with as few vertices as possible:
 
-\[
+$$
 \min_{M'} |V'|
-\]
+$$
 
 subject to three main constraints:
 
-\[
+$$
 \mathrm{FinalSSIM}(M,M') \ge 0.9,
 \qquad
- d_H(M,M') \le 0.05\,D_{\mathrm{AABB}},
+d_H(M,M') \le 0.05\,D_{\mathrm{AABB}},
 \qquad
- M' \in \mathcal{M}_{\mathrm{closed}}.
-\]
+M' \in \mathcal{M}_{\mathrm{closed}}.
+$$
 
 In other words, the simplified result must remain a **closed, watertight triangular 2-manifold**, stay within the allowed symmetric Hausdorff distance, and preserve appearance under the evaluator's six fixed camera views. Visual similarity is measured from rendered **normal and depth maps** using foreground-only SSIM.
 
@@ -47,7 +47,7 @@ The solver evolved from a conventional QEM decimator into a perception-aware sim
 
 The central design principle is to spend the vertex budget where the evaluator can actually see it. Flat interior triangulation can often be simplified heavily, while small changes near silhouettes, sharp features, or high-impact projected regions can consume a large fraction of the SSIM margin.
 
-For the mathematical formulation and the full reasoning behind the approach, see the [project report](IMC%20report%20CVmaxxing.pdf), [`docs/math-formalism.md`](docs/math-formalism.md), and [`docs/mesh-simplification-overview.md`](docs/mesh-simplification-overview.md).
+For the mathematical formulation and the full reasoning behind the approach, see the [project report](perception-aware-mesh-simplification-report.pdf), [`docs/math-formalism.md`](docs/math-formalism.md), and [`docs/mesh-simplification-overview.md`](docs/mesh-simplification-overview.md).
 
 ## Evaluation
 
@@ -87,16 +87,16 @@ See [`docs/evaluation.md`](docs/evaluation.md) for the mesh format, metrics, val
 
 ```text
 .
-├── FINAL_SUBMISSION.cpp       # final self-contained C++ solution
-├── IMC report CVmaxxing.pdf   # full project report
-├── IMC.pdf                    # challenge specification
-├── solutions/                 # solver families and iteration history
-├── evaluators/                # native validity/perceptual evaluators
-├── scripts/                   # build, evaluation and submission tools
-├── data/                      # evaluation data and experiment records
-├── datasets/                  # additional mesh datasets
-├── docs/                      # formulation, methods and experiment notes
-└── tests/                     # repository/evaluator checks
+├── FINAL_SUBMISSION.cpp                              # final self-contained C++ solution
+├── perception-aware-mesh-simplification-report.pdf  # full project report
+├── IMC.pdf                                           # challenge specification
+├── solutions/                                        # solver families and iteration history
+├── evaluators/                                       # native validity/perceptual evaluators
+├── scripts/                                          # build, evaluation and submission tools
+├── data/                                             # evaluation data and experiment records
+├── datasets/                                         # additional mesh datasets
+├── docs/                                             # formulation, methods and experiment notes
+└── tests/                                            # repository/evaluator checks
 ```
 
 The most useful technical documentation is:
